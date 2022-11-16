@@ -1,0 +1,32 @@
+project:
+  type: book
+
+book:
+  title: "Nonlinear mixed-effects modelling with nlmixr2"
+  author: "Jane Doe"
+  date: "16/11/2022"
+  
+  page-footer:
+    left: |
+      Nonlinear mixed-effects modelling with nlmixr2 was written by Justin Wilkins, 
+      Matthew Fidler, William Denney, John Harrold, Richard Hooijmaaijers, Rik 
+      Schoemaker, Mirjam Trame, Yuan Xiong and Huijuan Xu.
+    right: |
+      This book was built with <a href="https://quarto.org/">Quarto</a>.
+      
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - summary.qmd
+    - references.qmd
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+  pdf:
+    documentclass: scrreprt
+
+editor: visual
+
