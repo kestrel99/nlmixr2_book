@@ -1,3 +1,3 @@
-# Nonlinear mixed-effects modelling with nlmixr^2^
+# Nonlinear mixed-effects modelling with nlmixr<sup>2</sup>
 
-A book about nonlinear mixed-effects modelling with nlmixr^2^, written in Quarto.
+A book about nonlinear mixed-effects modelling with nlmixr<sup>2</sup>, written in Quarto.
