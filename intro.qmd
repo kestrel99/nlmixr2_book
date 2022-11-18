@@ -1,9 +1,164 @@
 # Introduction
 
-This is a book created from markdown and executable code.
+## Pharmacometrics
 
-See @knuth84 for additional discussion of literate programming.
+Wikipedia defines pharmacometrics (PMx) as a field of study of the methodology and application of mathematical models for disease and pharmacological measurement. It applies mathematical models of biology, pharmacology, disease, and physiology to describe and quantify interactions between xenobiotics (drugs) and patients (human and non-human), including both beneficial and adverse effects. It is normally applied to combine data from drugs, diseases and clinical trials to aid efficient drug development, regulatory decisions and rational drug treatment in patients.
+
+Pharmacometrics rolls up modeling and simulation for pharmacokinetics, pharmacodynamics, and #DiseaseProgression, with a focus on populations and variability. A major focus is to understand variability in drug response, which can be predictable (e.g. due to differences in body weight or kidney function) or unpredictable (differences between subjects seem random, but likely reflect a lack of knowledge or data).
+
+Quantitative systems pharmacology (QSP) is also considered to be a part of the PMx ecosystem, but applies a more theoretical and less data-driven approach to building models. QSP models are often much more complex than PK/PD models, with less of a populations focus.
+
+What this boils down to is using mathematical/statistical models to help explain and predict what the body does to the drug (pharmacokinetics, PK) and what the drug does to the body (pharmacodynamics, PD) - these are often combined to produce PKPD or exposure-response (ER) models. We build these using data collected from clinical trials (e.g. blood samples, clinical observations, scores, X-rays and suchlike - multiple samples, over time, from many subjects), which we use to build compartmental models which approximate what is happening over time using ordinary differential equations (ODEs).
+
+This sounds complicated - and it can be - but it's based on the well-stirred compartmental model for PK, a well-established set of principles for how systems like these can be approximated.
+
+I promised you beer! It's actually a pretty good example. PK describes what happens to the alcohol (ethanol) you consume between the glass and the bathroom, and PD describes what it does while it's circulating in your blood (quite a few things, including making you tipsy). Ethanol is a pretty interesting case, because it's eye-wateringly complex. The "DrinkMe" simulation on Nick Holford's website is a fun interactive example of how it fits together! You can find it at http://holford.fmhs.auckland.ac.nz/research/ethanol.
+
+So pharmacometrics can help us understand how drugs behave in different people. The "DrinkMe" model includes body weight - the bigger you are, the bigger your organs are (usually) and the more machinery you have for metabolizing substances like ethanol, so the slower you get drunk, and if you've eaten something, the alcohol will take longer to get into your system (although these are just two aspects of a very complex system).
+
+These principles apply to every drug we take, from aspirin to metformin (which is commonly used for treating diabetes). We use these models to figure out what an appropriate dose is, and what might affect it.
+
+We can use pharmacometric models like these to simulate clinical trials, dose regimens and so on, *in silico*, so that we can predict what will happen when we actually give a drug to a human, and whether the design we have proposed for our clinical trial will actually work when we run it.
+
+Later on in drug development, as we get close to registration, we can use these models to identify covariates whcih might inform differences in exposure and effect between patients (like age, weight, and sex), and to quantify the relationships between dose, exposure, and response for efficacy (e.g. how well the drug does at reducing or eliminating a tumour) and safety (e.g. how many unwanted side effects the drug generates at a useful dose).
+
+It's not just about the drugs themselves. Drug-disease and disease progression models are also an area in which pharmacometrics continues to have an impact - FDA maintains a list the ones they've developed internally (https://www.fda.gov/about-fda/center-drug-evaluation-and-research-cder/division-pharmacometrics), including examples for Alzheimer's disease and diabetes, although there are many, many more.
+
+So far we've mostly talked about empirical, data-driven models, but pharmacometrics goes further, especially now that the computers are getting so fast (models take time to fit to data, and the more complex they are, and the more patients you have, the longer they take).
+
+Physiologically-based PK (PBPK) models, for example, find the middle ground between PK and QSP, having a more mechanistic bent by taking into account anatomical, physiological, physical, and chemical descriptions of the phenomena involved in complex absorption, distribution, metabolic and elimination (ADME) processes, while remaining fundamentally driven by observed data.
+
+## `nlmixr2`
+
+`nlmixr2` is a set of packages - let's call it the "mixrverse" - for R that provides an open source alternative for nonlinear mixed-effects (NLME) model development, which are the core of most pharmacometrics workflows (amongst others).
+
+Modeling tools in our area are largely closed-source and massively expensive, and are a gigantic entry barrier for new people, especially in low and middle-income countries (and borderline unaffordable even for CROs like mine). `nlmixr2` is intended to be a solution to this problem.
+
+## What you will learn
+
+This book is intended to be a guide to using `nlmixr2` and its constellation of supporting and allied packages in R to develop and use nonlinear mixed-effect pharmacometric models. It is not going to teach you pharmacology, or the core tenets of pharmacometrics. You can learn about those elsewhere.
+
+You will, however, learn to construct datasets for analysis, to write models in `rxode2` and `nlmixr2`, to fit them using `nlmixr2`, to use `shinyMixR` for tracking model development steps, to use `xpose.nlmixr2` for model evaluation, to use `babelmixr` to cross-convert models from different tools, and to use `PKNCA` for figuring out initial estimates. You'll also learn how the "mixrverse" ecosystem has been constructed and how to work with it efficiently.
+
+Throughout the book, we'll point you to resources where you can learn more.
+
+## How this book is organised
+
+We start off with a summary of `nlmixr2` and all its dependencies, and how they're built and work together. This is essential for understanding why things have been set up in the way they have, and how to drill down into the source code to figure out what is actually happening under the hood. It is not, however, essential if you want to dive straight into modeling.
+
+We then get into datasets - how they should be structured, how events like doses are handled, visualization, and what variables should be.
+
+Next up, we look at a simple PK model, to illustrate how models can be written - both with closed-form solutions and ODEs - as well as how `nlmixr2` objects are constructed, and how to extract information from them. We'll use this example to explore the various minimization algorithms that are available and how to tune them.
+
+We'll then move on to a more complex PK example, to illustrate some of `nlmixr2`'s niftier features, like transit absorption models, and how to use the various diagnostics that are available, as well as `shinyMixR`. We'll then segue into simulation (using `rxode2`) to see how pharmacometric models can be used to predict clinical trial outcomes, for example.
+
+PK/PD models will be demonstrated using a version of the legendary haematological toxicity ("hemtox") model, along with a practical demonstration of how it can be used to predict neutropenia rates.
+
+Finally, we'll wrap up with a demonstration of using `babelmixr` to import models from NONMEM, and `PKNCA` for providing credible initial estimates, and some guidelines on how you can contribute to the project if you so wish. `nlmixr2` is, after all, an open-source project and relies entirely on volunteers for its development and maintenance.
+
+Within each chapter, we try and adhere to a similar pattern: start with some motivating examples so you can see the bigger picture, and then dive into the details. Each section of the book is paired with exercises to help you practice what you've learned.
+
+Although it can be tempting to skip the exercises, there's no better way to learn than practicing on real problems.
+
+## What you won't learn
+
+There are some topics that this book doesn't cover, simply because there isn't space.
+
+### Pharmacology
+
+This is quite a big one. You can't be an effective pharmacometrician unless you're up to speed with basic pharmacology, which you can't pick up in an afternoon. We'll be touching on pharmacology concepts throughout, but we're assuming you already know the theory. There are quite a few good books that can serve as an introduction to the topic - we particularly like Rowland & Tozer [@derendorf_rowland_2019].
+
+### Pharmacometrics
+
+Even bigger. Although you'll be able to infer a lot of things as we go, it would help if you already know what compartmental nonlinear mixed-effects models are and how they can be used to model the behaviour of drugs. Mould & Upton published a nice overview of the field a decade or so ago [@Mould2012; @Mould2013; @Upton2014], and there are good textbooks as well [@ette_pharmacometrics_2007; @gabrielsson_pharmacokinetic_2007].
+
+### Big data
+
+This book assumes you're working with relatively small in-memory datasets. The kinds of models we talk about here don't work well with bigger ones.
+
+### Data science
+
+We are dealing with specifically pharmacometric data analysis round these parts. If it's pure data science you're interested in, we heartily recommend [R for Data Science](https://github.com/hadley/r4ds/), which provides a comprehensive grounding. (We also swiped its structure for our book, which is a compliment of a sort, we guess.)
+
+### Python/Julia/Matlab/SAS/Ruby on Rails/etc
+
+In this book, you won't learn anything about Python, Julia, JavaScript or any other language outside of R. This is because `nlmixr2` is written in R.
+
+R is an environment designed from the ground up to support quantitative science, being not just a programming language, but also an interactive environment. It is - in our opinion - a much more flexible language than many of its peers.
+
+## Prerequisites
+
+There's some things we assume you know to get the most out of this book. We expect you to know your way around numbers and math, and to have at least basic experience with programming in R. If you're new to R programming, [Hands on Programming with R](https://rstudio-education.github.io/hopr/) is a highly-recommended place to start.
+
+You need a computer running a recent version of Windows, macOS or Linux with a decent amount of RAM, and some software.
+
+### R
+
+R is free and open source, and can be freely downloaded from CRAN, the **c**omprehensive **R** **a**rchive **n**etwork. CRAN is composed of a vast collection of mirrored servers located around the world and is used to distribute R and R packages. Rather than trying to pick the nearest server, use the cloud mirror, <https://cloud.r-project.org>, which automatically does the heavy lifting for you. New major releases come once a year, interspersed with 2-3 minor releases. It's a good idea to keep current, but we know that people in the pharma industry aren't necessarily able to do this. That being said, you need version 4.2.2 or better for this book.
+
+### RStudio
+
+RStudio is an integrated development environment, or IDE, for R and Python. You can get it from <https://posit.co/download/rstudio-desktop/>. You'll need at least version 2022.07.2+576.
+
+### `nlmixr2` and friends
+
+It goes without saying that you'll need to install some additional R packages. An R package is, essentially, a bundle of functions, data, and documentation that can be added to base R to extend its capabilities. As of today, there are tens of thousands of them.
+
+Install `nlmixr2` and its many dependencies from CRAN by entering the following code into R (or RStudio):
 
 ```{r}
-1 + 1
+#| eval: false
+install.packages("nlmixr2","sessioninfo","pmxTools","PKNCA","babelmixr2","xpose.nlmixr2")
+```
+
+Once installed, it can be loaded as follows. Note that you can't use it until it's been loaded.
+
+```{r}
+library(nlmixr2)
+```
+
+## Acknowledgements
+
+We have a lot of people to thank. `nlmixr2` is the product of countless hours of hard work by many, many contributors. 
+
+First and foremost, Wenping Wang is in many ways the father of `nlmixr`. It
+was his work that provided the foundation for this tool, and although he has
+since moved on from the core development team, everything we’ve built started
+with him.
+
+Teun Post was there at the very beginning, and was responsible for a lot of
+the initial documentation for `nlmixr`. Although he too has moved on, his
+contribution was large and fundamental.
+
+The `nlmixr` project has relied heavily on support from our day jobs. Matt, Mirjam,
+Yuan, Huijuan and Wenping were given the time they needed to
+work on this project by Novartis, which remains an enthusiastic core sponsor of
+the team and the project. Mick Looby, Lisa Hendricks and Etienne Pigeolet are
+worthy of special mention here. Justin and Rik have had their time sponsored
+by Occams, Richard and Teun were and are supported by LAP&P, Johnson &
+Johnson, Seattle Genetics, Avrobio, Human Predictions and Certara have all
+donated their associates’ time to help us build this tool. We are grateful to all
+of them.
+
+Without `RxODE`, there would be no `nlmixr`. We would be remiss in not
+mentioning the early contributions of Melissa Hallow, David James and Wenping
+in the development of this, the engine that drives `nlmixr` and `nlmixr2`.
+
+We’d all like to thank our families and colleagues for putting up with the odd
+hours and late nights and copious amounts of swearing emanating from our
+offices, both at work, and more often, recently, at home.
+
+Those we’re most grateful to, though, are our users: the early adopters, the
+curious, and most importantly, the bug reporters who have put `nlmixr` through
+its paces over the years and helped it become what it is today. Thank you, and
+we hope you’ll stay with us as we grow.
+
+## Colophon
+
+This book is powered by [Quarto](https://quarto.org) which makes it easy to write books that combine text and executable code.
+
+This book was built with:
+
+```{r}
+sessioninfo::session_info(c("nlmixr2"))
 ```

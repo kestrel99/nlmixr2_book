@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.2.269">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Nonlinear mixed-effects modelling with nlmixr2 - 2&nbsp; History</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./references.html" rel="next">
+<link href="./intro.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar floating">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+    <div class="container-fluid d-flex justify-content-between">
+      <h1 class="quarto-secondary-nav-title"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">History</span></h1>
+      <button type="button" class="quarto-btn-toggle btn" aria-label="Show secondary navigation">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Nonlinear mixed-effects modelling with nlmixr2</a> 
+        <div class="sidebar-tools-main">
+    <a href="https://github.com/kestrel99/nlmixr2_book/" title="Source Code" class="sidebar-tool px-1"><i class="bi bi-github"></i></a>
+</div>
+    </div>
+      </div>
+      <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+      </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">Welcome</a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./intro.html" class="sidebar-item-text sidebar-link"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./history.html" class="sidebar-item-text sidebar-link active"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">History</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./references.html" class="sidebar-item-text sidebar-link">References</a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#in-the-beginning-there-was-rxode" id="toc-in-the-beginning-there-was-rxode" class="nav-link active" data-scroll-target="#in-the-beginning-there-was-rxode"><span class="toc-section-number">2.1</span>  In the beginning, there was <code>RxODE</code></a></li>
+  <li><a href="#stan-and-deliver" id="toc-stan-and-deliver" class="nav-link" data-scroll-target="#stan-and-deliver"><span class="toc-section-number">2.2</span>  Stan and deliver</a></li>
+  <li><a href="#github" id="toc-github" class="nav-link" data-scroll-target="#github"><span class="toc-section-number">2.3</span>  GitHub</a></li>
+  <li><a href="#cran" id="toc-cran" class="nav-link" data-scroll-target="#cran"><span class="toc-section-number">2.4</span>  CRAN</a></li>
+  <li><a href="#first-peer-reviewed-publications" id="toc-first-peer-reviewed-publications" class="nav-link" data-scroll-target="#first-peer-reviewed-publications"><span class="toc-section-number">2.5</span>  First peer-reviewed publications</a></li>
+  <li><a href="#streamlining-and-modularization" id="toc-streamlining-and-modularization" class="nav-link" data-scroll-target="#streamlining-and-modularization"><span class="toc-section-number">2.6</span>  Streamlining and modularization</a></li>
+  <li><a href="#community-enthusiasm" id="toc-community-enthusiasm" class="nav-link" data-scroll-target="#community-enthusiasm"><span class="toc-section-number">2.7</span>  Community enthusiasm</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title d-none d-lg-block"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">History</span></h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<p>This book has been a long time in coming.</p>
+<section id="in-the-beginning-there-was-rxode" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="in-the-beginning-there-was-rxode"><span class="header-section-number">2.1</span> In the beginning, there was <code>RxODE</code></h2>
+<p>Our story begins with <code>RxODE</code>. <code>RxODE</code> was developed by Melissa Hallow and Wenping Wang as an R package for facilitating quick and efficient simulations of ODE models <span class="citation" data-cites="Wang2016">(<a href="references.html#ref-Wang2016" role="doc-biblioref">1</a>)</span>, and when it was presented by Melissa Hallow at the PAGE meeting in Crete in 2015 <span class="citation" data-cites="Hallow2015">(<a href="references.html#ref-Hallow2015" role="doc-biblioref">2</a>)</span>, the idea was floated to use its machinery for parameter estimation using <code>nlme</code>, the R implementation of nonlinear mixed-effects models by Pinheiro and Bates <span class="citation" data-cites="Pinheiro2000">(<a href="references.html#ref-Pinheiro2000" role="doc-biblioref">3</a>)</span>. As it turned out, work was already pretty advanced by that time, and parameter estimation with both <code>nlme</code> and stochastic annealing expectation maximization (SAEM) <span class="citation" data-cites="Delyon1999">(<a href="references.html#ref-Delyon1999" role="doc-biblioref">4</a>)</span> was implemented by Wenping by the end of that year.</p>
+</section>
+<section id="stan-and-deliver" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="stan-and-deliver"><span class="header-section-number">2.2</span> Stan and deliver</h2>
+<p>The next milestone came at ACoP6 the same year, when Yuan Xiong first presented <code>PMXstan</code> <span class="citation" data-cites="Xiong2015">(<a href="references.html#ref-Xiong2015" role="doc-biblioref">5</a>)</span>. Applying fully Bayesian approaches to pharmacometric modeling has always been a challenging task, and <code>PMXstan</code> was proposed as a way to bridge the gap. Stan implements gradient-based Markov chain Monte Carlo (MCMC) algorithms for Bayesian inference, stochastic, gradient-based variational Bayesian methods for approximate Bayesian inference, and gradient-based optimization for penalized maximum likelihood estimation, and can easily be run from R. However, before <code>PMXstan</code>, pharmacometricians had to write their own Stan code to describe PKPD models, and preparing data files was arduous and counter-intuitive for those used to event-based data files like those used in NONMEM. Also, there were no efficient ODE solvers that could handle stiff systems that would work with its No-U-Turn Sampler (NUTS). <code>PMXstan</code> solved this by providing wrappers for the more unfriendly parts of the process, closed-form solutions for common PK systems written in Stan code, and a NUTS-compatible template LSODA solver to deal with stiff ODE systems. Significantly, these were components that would become quite important for a more general nonlinear mixed-effects (NLME) model fitting tool.</p>
+</section>
+<section id="github" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="github"><span class="header-section-number">2.3</span> GitHub</h2>
+<p>The first <code>nlmixr</code> commit to GitHub was on 19 October 2016, and by then a small team had sprung up around the project, with Wenping Wang and Yuan Xiong at its core within Novartis, and a small group of interested parties including Teun Post and Richard Hooijmaaijers at LAP&amp;P and Rik Schoemaker and Justin Wilkins at Occams.</p>
+<p>In December 2016, <code>nlmixr</code> was presented to the modeling group at Uppsala University, where the implementation of the first-order conditional estimation method with interaction (FOCEI) by Almquist and colleagues <span class="citation" data-cites="Almquist2015">(<a href="references.html#ref-Almquist2015" role="doc-biblioref">6</a>)</span> was first discussed.</p>
+</section>
+<section id="cran" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="cran"><span class="header-section-number">2.4</span> CRAN</h2>
+<p>Matt Fidler joined the team at Novartis in January 2017, and implemented the FOCEI method, bringing the number of available algorithms to three. June 2017 saw the introduction of a unified user interface across all three algorithms, a major milestone, and our first CRAN release was <code>nlmixr</code> 0.9.0-1 on 9 November 2017. An official 1.0 would follow in August 2018. By now the team had widened to include Mirjam Trame, who, together with Wenping, was using <code>nlmixr</code> as the core of a series of pharmacometric training courses in Cuba and elsewhere in Central and South America.</p>
+</section>
+<section id="first-peer-reviewed-publications" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="first-peer-reviewed-publications"><span class="header-section-number">2.5</span> First peer-reviewed publications</h2>
+<p>Although <code>nlmixr</code> had been a regular fixture at PAGE and ACoP in the intervening years, our first major publication would arrive in 2019, in the form of a tutorial introducing <code>nlmixr</code> to the wider pharmacometric world <span class="citation" data-cites="Fidler2019">(<a href="references.html#ref-Fidler2019" role="doc-biblioref">7</a>)</span>, and two months later, a comparison of algorithms between <code>nlmixr</code> and its gold standard commercial alternatives (FOCEI in NONMEM and SAEM in Monolix) followed <span class="citation" data-cites="Schoemaker2019">(<a href="references.html#ref-Schoemaker2019" role="doc-biblioref">8</a>)</span>.</p>
+</section>
+<section id="streamlining-and-modularization" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="streamlining-and-modularization"><span class="header-section-number">2.6</span> Streamlining and modularization</h2>
+<p>Installing <code>nlmixr</code> was, at this time, a complicated and daunting undertaking, and although many in the pharmacometrics community had taken to <code>nlmixr</code> with enthusiasm, this was a large disadvantage that, to be frank, was turning people off. It had long been necessary to use Python for handling some aspects of FOCEI fitting, and getting it to work properly together with R was <em>hard</em>. This was further complicated by CRAN’s effective but very rigid package review and approval system, which was leading to endless problems with keeping the various dependencies <code>nlmixr</code> had in sync with one another. In April 2021, <code>nlmixr</code> 2.0 was unleashed upon the world, and Python was left behind forever. To say this was a relief to the development team was to understate the emotional catharsis that occurred.</p>
+<p>Although this solved one problem, another had been brewing. <code>nlmixr</code> had become a large package by R standards, and compile times at CRAN had begun to irk its administrators, leading to significant delays in approval. This eventually led to the decision to reimplement <code>nlmixr</code> as a series of closely linked, modular packages as opposed to a single monolithic unit. Rather than reverse-engineer the original <code>nlmixr</code>, the decision was taken to fork the project, and <code>nlmixr2</code> was born in February 2022. <code>nlmixr</code> would remain on GitHub, but would no longer be developed actively, while new features and ongoing improvements would be applied to <code>nlmixr2</code>. The first CRAN release of <code>nlmixr2</code> took place in June 2022.</p>
+<p>Up to 26 March 2022, the date on which the last commit was made to the original version of <code>nlmixr</code>, there were 2,403 commits to the nlmixr repository and 17 more CRAN releases. <code>RxODE</code> had 4,860 commits and 33 CRAN releases (some before <code>nlmixr</code>’s time, but we’re just going to go ahead and count them anyway).</p>
+</section>
+<section id="community-enthusiasm" class="level2" data-number="2.7">
+<h2 data-number="2.7" class="anchored" data-anchor-id="community-enthusiasm"><span class="header-section-number">2.7</span> Community enthusiasm</h2>
+<p>Over the years, we’ve hosted numerous tutorials at the major pharmacometrics meetings (PAGE, ACoP, PAGANZ and WCoP), and used nlmixr as the centrepoint for a series of well-received pharmacometrics courses in Cuba and elsewhere. We’ve also managed to publish a bit <span class="citation" data-cites="Fidler2021">(<a href="references.html#ref-Fidler2021" role="doc-biblioref">9</a>)</span>, as have others (we get into this a little later on). Our tutorial in <em>Clinical Pharmacology &amp; Therapeutics: Pharmacometrics &amp; Systems Pharmacology</em> <span class="citation" data-cites="Fidler2019">(<a href="references.html#ref-Fidler2019" role="doc-biblioref">7</a>)</span> was one of that journal’s top ten most-read articles in 2021, with over 4,000 downloads. Our article had been one of the top 10% most-downloaded papers in 2018-2019, and having such interest for the second time in a row is tremendously encouraging for all of us! We hope it’s a reflection of the enthusiasm the community is building for our tool, and hope that it will continue.</p>
+<p>This book is the next step in our journey; we hope you’ll take it with us.</p>
+
+
+<div id="refs" class="references csl-bib-body" role="doc-bibliography" style="display: none">
+<div id="ref-Wang2016" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">1. </div><div class="csl-right-inline">Wang W, Hallow KM, James DA. <a href="https://doi.org/10.1002/psp4.12052"><span class="nocase">A tutorial on RxODE: Simulating differential equation pharmacometric models in R</span></a>. CPT: Pharmacometrics and Systems Pharmacology. 2016;5(1):3–10. </div>
+</div>
+<div id="ref-Hallow2015" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">2. </div><div class="csl-right-inline">Hallow KM, James DA, Wang W. <span class="nocase">Interactive evaluation of dosing regimens for a novel anti-diabetic agent: a case-study in the application of RxODE</span>. In: PAGE 24 [Internet]. 2015. p. Abstr 3542. Available from: <a href="https://www.page-meeting.org/?abstract=3542">https://www.page-meeting.org/?abstract=3542</a></div>
+</div>
+<div id="ref-Pinheiro2000" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">3. </div><div class="csl-right-inline">Pinheiro JC, Bates DM. <a href="https://doi.org/10.1007/b98882">Mixed-effects models in s and s-PLUS</a>. New York: Springer; 2000. </div>
+</div>
+<div id="ref-Delyon1999" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">4. </div><div class="csl-right-inline">Delyon BYB, Lavielle M, Moulines E. <span class="nocase">Convergence of a stochastic approximation version of the EM algorithm</span>. Annals of Statistics [Internet]. 1999;27(1):94–128. Available from: <a href="https://arxiv.org/abs/arXiv:1011.1669v3">https://arxiv.org/abs/arXiv:1011.1669v3</a></div>
+</div>
+<div id="ref-Xiong2015" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">5. </div><div class="csl-right-inline">Xiong Y, James D, He F, Wang W. <a href="https://doi.org/10.1007/s10928-015-9432-2"><span class="nocase">PMXstan: An R Library to Facilitate PKPD Modeling with Stan (M-01)</span></a>. Journal of Pharmacokinetics and Pharmacodynamics. 2015 Oct;42(S1):S11. </div>
+</div>
+<div id="ref-Almquist2015" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">6. </div><div class="csl-right-inline">Almquist J, Leander J, Jirstrand M. <a href="https://doi.org/10.1007/s10928-015-9409-1"><span class="nocase">Using sensitivity equations for computing gradients of the FOCE and FOCEI approximations to the population likelihood</span></a>. Journal of Pharmacokinetics and Pharmacodynamics. 2015;42(3):191–209. </div>
+</div>
+<div id="ref-Fidler2019" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">7. </div><div class="csl-right-inline">Fidler M, Wilkins JJ, Hooijmaijers R, Post TM, Schoemaker R, Trame MN, et al. <a href="https://doi.org/10.1002/psp4.12445"><span class="nocase">Nonlinear Mixed-Effects Model Development and Simulation Using nlmixr and Related R Open-Source Packages</span></a>. CPT: Pharmacometrics and Systems Pharmacology. 2019 Sep;8(9):621–33. </div>
+</div>
+<div id="ref-Schoemaker2019" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">8. </div><div class="csl-right-inline">Schoemaker R, Fidler M, Laveille C, Wilkins JJ, Hooijmaijers R, Post TM, et al. <a href="https://doi.org/10.1002/psp4.12471"><span class="nocase">Performance of the SAEM and FOCEI Algorithms in the Open-Source, Nonlinear Mixed Effect Modeling Tool nlmixr</span></a>. CPT: Pharmacometrics and Systems Pharmacology. 2019;8(12):923–30. </div>
+</div>
+<div id="ref-Fidler2021" class="csl-entry" role="doc-biblioentry">
+<div class="csl-left-margin">9. </div><div class="csl-right-inline">Fidler M, Hooijmaijers R, Schoemaker R, Wilkins JJ, Xiong Y, Wang W. <a href="https://doi.org/10.1002/psp4.12618"><span class="nocase">R and nlmixr as a gateway between statistics and pharmacometrics</span></a>. CPT: Pharmacometrics and Systems Pharmacology. 2021 Apr;10(4):283–5. </div>
+</div>
+</div>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./intro.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./references.html" class="pagination-link">
+        <span class="nav-page-text">References</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">Nonlinear mixed-effects modelling with nlmixr2 was written by Justin Wilkins, Matthew Fidler, William Denney, John Harrold, Richard Hooijmaaijers, Rik Schoemaker, Mirjam Trame, Yuan Xiong and Huijuan Xu.</div>   
+    <div class="nav-footer-right">This book was built with <a href="https://quarto.org/">Quarto</a>.</div>
+  </div>
+</footer>
+
+
+
+</body></html>

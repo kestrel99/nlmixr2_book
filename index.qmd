@@ -1,9 +1,12 @@
-# Preface {.unnumbered}
+# Welcome {.unnumbered}
 
-This is a Quarto book.
+This is the website for the work-in-progress **"Nonlinear mixed-effects modelling with nlmixr2"**.
 
-To learn more about Quarto books visit <https://quarto.org/docs/books>.
+Our book will describe the installation of `nlmixr2`, and walk the reader through its use in pharmacological modelling and simulation using pharmacokinetic and pharmacodynamic data. We intend to start with simple examples and work towards more complex and useful applications. As well as the use of `nlmixr2` as a routine tool in academic and industrial drug research and development, the book will elaborate on the structure of the tool so that readers interested in contributing to the project or developing extensions have a good starting point for doing so.
 
-```{r}
-1 + 1
-```
+Readers will need some familiarity with pharmacology and biostatistics to get the most out of the book.
+
+This website is and will always be free, licensed under the [CC BY-NC-ND 3.0](http://creativecommons.org/licenses/by-nc-nd/3.0/us/) License. If you'd like a physical copy of the book, there's one in the works.
+
+
+

@@ -3,7 +3,10 @@ project:
 
 book:
   title: "Nonlinear mixed-effects modelling with nlmixr2"
-  author: "Jane Doe"
+  author: 
+  - Justin J. Wilkins, Occams
+  - Matthew Fidler, Novartis
+  
   date: "16/11/2022"
   
   page-footer:
@@ -13,14 +16,17 @@ book:
       Schoemaker, Mirjam Trame, Yuan Xiong and Huijuan Xu.
     right: |
       This book was built with <a href="https://quarto.org/">Quarto</a>.
-      
+  repo-url: https://github.com/kestrel99/nlmixr2_book/
+  repo-branch: main
+  
   chapters:
     - index.qmd
     - intro.qmd
-    - summary.qmd
+    - history.qmd
     - references.qmd
 
 bibliography: references.bib
+csl: vancouver.csl
 
 format:
   html:
