@@ -38,7 +38,7 @@ Modeling tools in our area are largely closed-source and massively expensive, an
 
 This book is intended to be a guide to using `nlmixr2` and its constellation of supporting and allied packages in R to develop and use nonlinear mixed-effect pharmacometric models. It is not going to teach you pharmacology, or the core tenets of pharmacometrics. You can learn about those elsewhere.
 
-You will, however, learn to construct datasets for analysis, to write models in `rxode2` and `nlmixr2`, to fit them using `nlmixr2`, to use `shinyMixR` for tracking model development steps, to use `xpose.nlmixr2` for model evaluation, to use `babelmixr` to cross-convert models from different tools, and to use `PKNCA` for figuring out initial estimates. You'll also learn how the "mixrverse" ecosystem has been constructed and how to work with it efficiently.
+You will, however, learn to construct datasets for analysis, to write models in `rxode2` and `nlmixr2`, to fit them using `nlmixr2`, to use `shinyMixR` for tracking model development steps, to use `xpose.nlmixr2` for model evaluation, to use `babelmixr2` to cross-convert models from different tools, and to use `PKNCA` for figuring out initial estimates. You'll also learn how the "mixrverse" ecosystem has been constructed and how to work with it efficiently.
 
 Throughout the book, we'll point you to resources where you can learn more.
 
