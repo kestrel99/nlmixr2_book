@@ -7,7 +7,7 @@ book:
   - Justin J. Wilkins, Occams
   - Matthew Fidler, Novartis
   
-  date: "16/11/2022"
+  date: "30/01/2023"
   
   page-footer:
     left: |
@@ -23,6 +23,7 @@ book:
     - index.qmd
     - intro.qmd
     - history.qmd
+    - getting_started_with_rxode2.qmd
     - references.qmd
 
 bibliography: references.bib

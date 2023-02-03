@@ -274,7 +274,7 @@ div.csl-indent {
 <section id="what-you-will-learn" class="level2" data-number="1.3">
 <h2 data-number="1.3" class="anchored" data-anchor-id="what-you-will-learn"><span class="header-section-number">1.3</span> What you will learn</h2>
 <p>This book is intended to be a guide to using <code>nlmixr2</code> and its constellation of supporting and allied packages in R to develop and use nonlinear mixed-effect pharmacometric models. It is not going to teach you pharmacology, or the core tenets of pharmacometrics. You can learn about those elsewhere.</p>
-<p>You will, however, learn to construct datasets for analysis, to write models in <code>rxode2</code> and <code>nlmixr2</code>, to fit them using <code>nlmixr2</code>, to use <code>shinyMixR</code> for tracking model development steps, to use <code>xpose.nlmixr2</code> for model evaluation, to use <code>babelmixr</code> to cross-convert models from different tools, and to use <code>PKNCA</code> for figuring out initial estimates. You’ll also learn how the “mixrverse” ecosystem has been constructed and how to work with it efficiently.</p>
+<p>You will, however, learn to construct datasets for analysis, to write models in <code>rxode2</code> and <code>nlmixr2</code>, to fit them using <code>nlmixr2</code>, to use <code>shinyMixR</code> for tracking model development steps, to use <code>xpose.nlmixr2</code> for model evaluation, to use <code>babelmixr2</code> to cross-convert models from different tools, and to use <code>PKNCA</code> for figuring out initial estimates. You’ll also learn how the “mixrverse” ecosystem has been constructed and how to work with it efficiently.</p>
 <p>Throughout the book, we’ll point you to resources where you can learn more.</p>
 </section>
 <section id="how-this-book-is-organised" class="level2" data-number="1.4">
@@ -343,8 +343,13 @@ div.csl-indent {
 </section>
 <section id="acknowledgements" class="level2" data-number="1.7">
 <h2 data-number="1.7" class="anchored" data-anchor-id="acknowledgements"><span class="header-section-number">1.7</span> Acknowledgements</h2>
-<p><code>nlmixr2</code> is the product of countless hours of hard work by many, many contributors. In particular the authors wish to acknowledge Wenping Wang, who started this project, and is in no small part responsible for its continuing success.</p>
-<p>We would also like to highlight the contributions of our employers, whose generous donation of our time to this project have enabled it to grow into what it is today. So heartfelt thanks to Novartis (in particular, Lisa Hendricks and Mick Looby), Occams, LAP&amp;P, Certara, Seattle Genetics, and Johnson &amp; Johnson for letting us play in this wonderful sandbox.</p>
+<p>We have a lot of people to thank. <code>nlmixr2</code> is the product of countless hours of hard work by many, many contributors.</p>
+<p>First and foremost, Wenping Wang is in many ways the father of <code>nlmixr</code>. It was his work that provided the foundation for this tool, and although he has since moved on from the core development team, everything we’ve built started with him.</p>
+<p>Teun Post was there at the very beginning, and was responsible for a lot of the initial documentation for <code>nlmixr</code>. Although he too has moved on, his contribution was large and fundamental.</p>
+<p>The <code>nlmixr</code> project has relied heavily on support from our day jobs. Matt, Mirjam, Yuan, Huijuan and Wenping were given the time they needed to work on this project by Novartis, which remains an enthusiastic core sponsor of the team and the project. Mick Looby, Lisa Hendricks and Etienne Pigeolet are worthy of special mention here. Justin and Rik have had their time sponsored by Occams, Richard and Teun were and are supported by LAP&amp;P, Johnson &amp; Johnson, Seattle Genetics, Avrobio, Human Predictions and Certara have all donated their associates’ time to help us build this tool. We are grateful to all of them.</p>
+<p>Without <code>RxODE</code>, there would be no <code>nlmixr</code>. We would be remiss in not mentioning the early contributions of Melissa Hallow, David James and Wenping in the development of this, the engine that drives <code>nlmixr</code> and <code>nlmixr2</code>.</p>
+<p>We’d all like to thank our families and colleagues for putting up with the odd hours and late nights and copious amounts of swearing emanating from our offices, both at work, and more often, recently, at home.</p>
+<p>Those we’re most grateful to, though, are our users: the early adopters, the curious, and most importantly, the bug reporters who have put <code>nlmixr</code> through its paces over the years and helped it become what it is today. Thank you, and we hope you’ll stay with us as we grow.</p>
 </section>
 <section id="colophon" class="level2" data-number="1.8">
 <h2 data-number="1.8" class="anchored" data-anchor-id="colophon"><span class="header-section-number">1.8</span> Colophon</h2>
@@ -363,8 +368,8 @@ div.csl-indent {
  collate  English_World.utf8
  ctype    English_World.utf8
  tz       Europe/Berlin
- date     2022-11-16
- pandoc   2.19.2 @ C:/Program Files/RStudio/bin/quarto/bin/tools/ (via rmarkdown)
+ date     2023-01-30
+ pandoc   2.19.2 @ C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools/ (via rmarkdown)
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  !  package       * version     date (UTC) lib source
@@ -519,7 +524,7 @@ div.csl-indent {
  P  yaml            2.3.6       2022-10-18 [?] CRAN (R 4.2.1)
 
  [1] C:/Occams/Local/GitHub/nlmixr2_book/renv/library/R-4.2/x86_64-w64-mingw32
- [2] C:/Users/justin/AppData/Local/Temp/RtmpKOv5VX/renv-system-library
+ [2] C:/Users/justin/AppData/Local/Temp/Rtmp8MtPko/renv-system-library
 
  P ── Loaded and on-disk path mismatch.
  D ── DLL MD5 mismatch, broken installation.

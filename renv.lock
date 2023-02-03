@@ -1422,19 +1422,15 @@
     },
     "rxode2random": {
       "Package": "rxode2random",
-      "Version": "2.0.9.9000",
+      "Version": "2.0.9",
       "Source": "Repository",
-      "Repository": "https://nlmixr2.r-universe.dev",
-      "RemoteUrl": "https://github.com/nlmixr2/rxode2random",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "7b6e49908a39ba6bd3a0ed2b94eb924391ef5916",
-      "Hash": "1769c5e0f527be7f31b4cfc21b820527",
+      "Repository": "CRAN",
+      "Hash": "aa95690e1fbd3d1fc5b03fbff2d1399c",
       "Requirements": [
         "BH",
         "Rcpp",
         "RcppArmadillo",
         "checkmate",
-        "lotri",
         "rxode2parse",
         "sitmo"
       ]
