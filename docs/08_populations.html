@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -62,6 +96,8 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 </head>
 
@@ -324,7 +360,19 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#between-subject-variability" id="toc-between-subject-variability" class="nav-link active" data-scroll-target="#between-subject-variability"><span class="header-section-number">8.1</span> Between-subject variability</a></li>
+  <li><a href="#random-unexplained-variability" id="toc-random-unexplained-variability" class="nav-link" data-scroll-target="#random-unexplained-variability"><span class="header-section-number">8.2</span> Random unexplained variability</a></li>
+  <li><a href="#simulating-a-population-of-individuals-with-different-dosing-regimens" id="toc-simulating-a-population-of-individuals-with-different-dosing-regimens" class="nav-link" data-scroll-target="#simulating-a-population-of-individuals-with-different-dosing-regimens"><span class="header-section-number">8.3</span> Simulating a population of individuals with different dosing regimens</a></li>
+  <li><a href="#simulating-clinical-trials" id="toc-simulating-clinical-trials" class="nav-link" data-scroll-target="#simulating-clinical-trials"><span class="header-section-number">8.4</span> Simulating clinical trials</a></li>
+  <li><a href="#simulation-from-inverse-wishart-correlations" id="toc-simulation-from-inverse-wishart-correlations" class="nav-link" data-scroll-target="#simulation-from-inverse-wishart-correlations"><span class="header-section-number">8.5</span> Simulation from inverse Wishart correlations</a></li>
+  <li><a href="#simulate-using-variancestandard-deviation-standard-errors" id="toc-simulate-using-variancestandard-deviation-standard-errors" class="nav-link" data-scroll-target="#simulate-using-variancestandard-deviation-standard-errors"><span class="header-section-number">8.6</span> Simulate using variance/standard deviation standard errors</a></li>
+  <li><a href="#simulate-without-uncertainty-in-omega-or-sigma-parameters" id="toc-simulate-without-uncertainty-in-omega-or-sigma-parameters" class="nav-link" data-scroll-target="#simulate-without-uncertainty-in-omega-or-sigma-parameters"><span class="header-section-number">8.7</span> Simulate without uncertainty in <code>omega</code> or <code>sigma</code> parameters</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -346,8 +394,674 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<section id="between-subject-variability" class="level2" data-number="8.1">
+<h2 data-number="8.1" class="anchored" data-anchor-id="between-subject-variability"><span class="header-section-number">8.1</span> Between-subject variability</h2>
+<p>Simulating single profiles is fun and all, and can be very helpful in explaining what the model is doing, but for this kind of thing to be really useful, we need to be able simulate populations of individuals, not just single patients.</p>
+<p>Let’s revisit our two-compartment indirect response model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rxode2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>rxode2 2.0.14 using 1 threads (see ?getRxThreads)
+  no cache: create with `rxCreateCache()`</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>========================================
+rxode2 has not detected OpenMP support and will run in single-threaded mode
+This is a Mac. Please read https://mac.r-project.org/openmp/
+========================================</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">740727</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">rxSetSeed</span>(<span class="dv">740727</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ini</span>({</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    KA   <span class="ot">&lt;-</span> <span class="fl">0.294</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    TCl  <span class="ot">&lt;-</span> <span class="fl">18.6</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    eta.Cl <span class="sc">~</span> <span class="fl">0.4</span><span class="sc">^</span><span class="dv">2</span>  <span class="co"># between-subject variability; variance is 0.16</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    V2   <span class="ot">&lt;-</span> <span class="fl">40.2</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    Q    <span class="ot">&lt;-</span> <span class="fl">10.5</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    V3   <span class="ot">&lt;-</span> <span class="dv">297</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    Kin  <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    Kout <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    EC50 <span class="ot">&lt;-</span> <span class="dv">200</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">model</span>({</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    C2 <span class="ot">&lt;-</span> centr<span class="sc">/</span>V2</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    C3 <span class="ot">&lt;-</span> peri<span class="sc">/</span>V3</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    CL <span class="ot">&lt;-</span>  TCl<span class="sc">*</span><span class="fu">exp</span>(eta.Cl)  <span class="do">## coded as a variable in the model</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    d<span class="sc">/</span><span class="fu">dt</span>(depot) <span class="ot">&lt;-</span> <span class="sc">-</span>KA<span class="sc">*</span>depot</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    d<span class="sc">/</span><span class="fu">dt</span>(centr) <span class="ot">&lt;-</span> KA<span class="sc">*</span>depot <span class="sc">-</span> CL<span class="sc">*</span>C2 <span class="sc">-</span> Q<span class="sc">*</span>C2 <span class="sc">+</span> Q<span class="sc">*</span>C3</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    d<span class="sc">/</span><span class="fu">dt</span>(peri)  <span class="ot">&lt;-</span>                    Q<span class="sc">*</span>C2 <span class="sc">-</span> Q<span class="sc">*</span>C3</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    d<span class="sc">/</span><span class="fu">dt</span>(eff)   <span class="ot">&lt;-</span> Kin <span class="sc">-</span> Kout<span class="sc">*</span>(<span class="dv">1</span><span class="sc">-</span>C2<span class="sc">/</span>(EC50<span class="sc">+</span>C2))<span class="sc">*</span>eff</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">eff</span>(<span class="dv">0</span>) <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>You’ll notice we’ve added something new: between-subject variability, <code>eta.Cl</code>, to which we have assigned a value of 0.16 (a variance, corresponding to a standard deviation of 0.4). Notice also our convention of using the tilde (<code>~</code>) to indicate that this is a random variable. We define it in the <code>ìni</code> block and use it in the <code>mod</code> block - here, it provides for a log-normal distribution of clearance values. “Eta” is a commonly-used term for between-subject variability in pharmacometrics, and is derived from this original expression, which you might remember from <a href="04_intro_to_nlme.html"><span>Chapter&nbsp;4</span></a>. Here we’re using CL rather than V.</p>
+<p><span class="math display">\[
+CL_i = CL \cdot \text{exp}(\eta_{CL,i})\\
+\eta_{CL,i} \sim N(0, \omega_{CL})
+\]</span> So here, variability around CL (<span class="math inline">\(\eta_{CL}\)</span>) is normally distributed with a mean of 0 and a variance of 0.16 (corresponding to an <span class="math inline">\(\omega_{CL}\)</span> value of 0.4). CL itself will be log-normally distributed.</p>
+<p>The next step is to create the dosing regimen, which every simulated subject will share:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ev <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amountUnits=</span><span class="st">"mg"</span>, <span class="at">timeUnits=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">10000</span>, <span class="at">cmt=</span><span class="st">"centr"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can add sampling times as well (although <code>rxode2</code> will fill these in for you if you don’t do this now).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ev <span class="ot">&lt;-</span> ev <span class="sc">%&gt;%</span> <span class="fu">et</span>(<span class="dv">0</span>,<span class="dv">48</span>, <span class="at">length.out=</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Notice as well that <code>et</code> takes similar arguments to <code>seq</code> when adding sampling times. As you’ll remember from <a href="06_events.html"><span>Chapter&nbsp;6</span></a>, many methods for adding sampling times and events are available in case we want to set up something complex. Now that we have a dosing and sampling scheme set up, we can simulate from the model. Here we create 100 subjects using the <code>nSub</code> argument.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(mod, ev, <span class="at">nSub=</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ parameter labels from comments will be replaced by 'label()'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>using C compiler: ‘Apple clang version 15.0.0 (clang-1500.0.40.1)’
+using SDK: ‘’
+ld: warning: -single_module is obsolete
+ld: warning: -multiply_defined is obsolete</code></pre>
+</div>
+</div>
+<p>To look at the results quickly, you can use the built-in <code>plot</code> routine. This will create a <code>ggplot2</code> object that you can modify as you wish using standard <code>ggplot2</code> syntax. The extra parameter we’ve supplied to <code>plot</code> clarifies the piece of information we are interested in plotting. In this case, it’s the the derived parameter <code>C2</code>, concentration.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(sim, C2, <span class="at">ylab=</span><span class="st">"Concentration"</span>, <span class="at">log=</span><span class="st">"y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Once we have results we like, we can get a bit more creative with <code>ggplot2</code> and <code>patchwork</code>, which lets us arrange plots the way we want them.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(sim, <span class="fu">aes</span>(time, C2, <span class="at">group=</span>sim.id)) <span class="sc">+</span> </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="st">"Concentration"</span>) <span class="sc">+</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Concentration"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(sim, <span class="fu">aes</span>(time, eff, <span class="at">group=</span>sim.id)) <span class="sc">+</span> </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="st">"Effect"</span>) <span class="sc">+</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Effect"</span>)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Usually, simply simulating the system isn’t enough. There’s too much information, and it can be difficult to see trends easily. We need to summarize it.</p>
+<p>The <code>rxode2</code> object is a type of data frame, which means we can get at the simulated data quite easily.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(sim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "rxSolve"        "rxSolveParams"  "rxSolveCovs"    "rxSolveInits"  
+[5] "rxSolveSimType" "data.frame"    
+attr(,".rxode2.env")
+&lt;environment: 0x1148f8e10&gt;</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  sim.id      time        C2        C3       CL depot     centr     peri
+1      1 0.0000000 248.75622  0.000000 13.54257     0 10000.000    0.000
+2      1 0.4848485 186.36159  3.669665 13.54257     0  7491.736 1089.891
+3      1 0.9696970 140.01713  6.360099 13.54257     0  5628.689 1888.949
+4      1 1.4545455 105.59032  8.323759 13.54257     0  4244.731 2472.156
+5      1 1.9393939  80.01268  9.748097 13.54257     0  3216.510 2895.185
+6      1 2.4242424  61.00582 10.772297 13.54257     0  2452.434 3199.372
+       eff
+1 1.000000
+2 1.222877
+3 1.359259
+4 1.422944
+5 1.432400
+6 1.406572</code></pre>
+</div>
+</div>
+<p><code>rxode2</code> includes some helpful shortcuts for summarizing the data. For example, we can extract the 5th, 50th, and 95th percentiles of the simulated data for each time point and plot them quite easily.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(sim, <span class="st">"C2"</span>, <span class="at">level=</span><span class="fl">0.95</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(<span class="at">ylab=</span><span class="st">"Central Concentration"</span>, <span class="at">log=</span><span class="st">"y"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>! in order to put confidence bands around the intervals, you need at least 2500 simulations</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>summarizing data...done</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">confint</span>(sim, <span class="st">"eff"</span>, <span class="at">level=</span><span class="fl">0.95</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(<span class="at">ylab=</span><span class="st">"Effect"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>! in order to put confidence bands around the intervals, you need at least 2500 simulations</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>summarizing data...done</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This is a shortcut for this slightly longer code:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> sim <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(time) <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">C2.5=</span><span class="fu">quantile</span>(C2, <span class="fl">0.05</span>),</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">C2.50=</span><span class="fu">quantile</span>(C2, <span class="fl">0.50</span>),</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">C2.95=</span><span class="fu">quantile</span>(C2, <span class="fl">0.95</span>),</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.5=</span><span class="fu">quantile</span>(eff, <span class="fl">0.05</span>),</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.50=</span><span class="fu">quantile</span>(eff, <span class="fl">0.50</span>),</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.95=</span><span class="fu">quantile</span>(eff, <span class="fl">0.95</span>))</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(summary, <span class="fu">aes</span>(time, C2<span class="fl">.50</span>)) <span class="sc">+</span> </span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>C2<span class="fl">.5</span>, <span class="at">ymax=</span>C2<span class="fl">.95</span>), <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="st">"Concentration"</span>) <span class="sc">+</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>(<span class="at">sides=</span><span class="st">"l"</span>)<span class="sc">+</span> </span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Concentration"</span>)</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(summary, <span class="fu">aes</span>(time, eff<span class="fl">.50</span>)) <span class="sc">+</span> </span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>eff<span class="fl">.5</span>, <span class="at">ymax=</span>eff<span class="fl">.95</span>), <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="st">"Effect"</span>) <span class="sc">+</span></span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>(<span class="at">sides=</span><span class="st">"l"</span>)<span class="sc">+</span> </span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Effect"</span>)</span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The parameters that were simulated for this example can also be extracted relatively easily.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sim<span class="sc">$</span>param)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  sim.id    KA  TCl   V2    Q  V3 Kin Kout EC50     eta.Cl
+1      1 0.294 18.6 40.2 10.5 297   1    1  200 -0.3173233
+2      2 0.294 18.6 40.2 10.5 297   1    1  200 -0.6963040
+3      3 0.294 18.6 40.2 10.5 297   1    1  200 -0.1187198
+4      4 0.294 18.6 40.2 10.5 297   1    1  200 -0.4707693
+5      5 0.294 18.6 40.2 10.5 297   1    1  200  0.2856009
+6      6 0.294 18.6 40.2 10.5 297   1    1  200 -0.2746254</code></pre>
+</div>
+</div>
+</section>
+<section id="random-unexplained-variability" class="level2" data-number="8.2">
+<h2 data-number="8.2" class="anchored" data-anchor-id="random-unexplained-variability"><span class="header-section-number">8.2</span> Random unexplained variability</h2>
+<p>In addition to simulating between-subject variability, it’s often important to simulate unexplained variability. This is variability that is not explained by differences between subjects, such as laboratory assay error, for example.</p>
+<p>Recall that random unexplained variability can be defined in a number of ways. The first, in which an additive relationship is assumed, is defined as:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} + \sigma_{add,i,j}\\
+\sigma_{add} \sim N(0, \epsilon_{add})
+\]</span> Residual error can also be modelled to be proportional:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j})\\
+\sigma_{prop} \sim N(0, \epsilon_{prop})
+\]</span> Or both:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j}) + \sigma_{add,i,j}
+\]</span></p>
+<p>Without rewriting our model from scratch, we can simply add residual error to our concentration and effect compartments using model piping, as follows.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> mod <span class="sc">%&gt;%</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">model</span>(eff <span class="sc">~</span> <span class="fu">add</span>(eff.sd), <span class="at">append=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span>    <span class="co"># add additive residual error to effect </span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">model</span>(C2 <span class="sc">~</span> <span class="fu">prop</span>(prop.sd), <span class="at">append=</span><span class="cn">TRUE</span>) <span class="sc">%&gt;%</span>   <span class="co"># add proportional residual error to concentration</span></span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ini</span>(<span class="at">eff.sd=</span><span class="fu">sqrt</span>(<span class="fl">0.1</span>), <span class="at">prop.sd=</span><span class="fu">sqrt</span>(<span class="fl">0.1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ parameter labels from comments will be replaced by 'label()'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ add residual parameter `eff.sd` and set estimate to 1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ add residual parameter `prop.sd` and set estimate to 1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ change initial estimate of `eff.sd` to `0.316227766016838`</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ change initial estimate of `prop.sd` to `0.316227766016838`</code></pre>
+</div>
+</div>
+<p>You can see how the dataset should be defined with <code>$multipleEndpoint</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>mod2<span class="sc">$</span>multipleEndpoint</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  variable                cmt                dvid*
+1  eff ~ … cmt='eff' or cmt=4 dvid='eff' or dvid=1
+2   C2 ~ …  cmt='C2' or cmt=5  dvid='C2' or dvid=2</code></pre>
+</div>
+</div>
+<p>We can set up an event table like this…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>ev <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amountUnits=</span><span class="st">"mg"</span>, <span class="at">timeUnits=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">10000</span>, <span class="at">cmt=</span><span class="st">"centr"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">et</span>(<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">48</span>, <span class="at">length.out=</span><span class="dv">100</span>), <span class="at">cmt=</span><span class="st">"eff"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">et</span>(<span class="fu">seq</span>(<span class="dv">0</span>,<span class="dv">48</span>, <span class="at">length.out=</span><span class="dv">100</span>), <span class="at">cmt=</span><span class="st">"C2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And now we can solve the system.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(mod2, ev, <span class="at">nSub=</span><span class="dv">100</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>using C compiler: ‘Apple clang version 15.0.0 (clang-1500.0.40.1)’
+using SDK: ‘’
+ld: warning: -single_module is obsolete
+ld: warning: -multiply_defined is obsolete</code></pre>
+</div>
+</div>
+<p>The results here are presented by compartment number, so we’ll need to do a bit of filtering to generate our summary plots with residual error. The values of <code>C2</code> and <code>eff</code> with residual error are found in <code>sim</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>sim</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>── Solved rxode2 object ──
+── Parameters (x$params): ──
+# A tibble: 100 × 12
+   sim.id    KA   TCl    V2     Q    V3   Kin  Kout  EC50 eff.sd prop.sd  eta.Cl
+    &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+ 1      1 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.265 
+ 2      2 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.198 
+ 3      3 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.228 
+ 4      4 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316  0.311 
+ 5      5 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.597 
+ 6      6 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.0645
+ 7      7 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316  0.149 
+ 8      8 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316  0.138 
+ 9      9 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.923 
+10     10 0.294  18.6  40.2  10.5   297     1     1   200  0.316   0.316 -0.135 
+# ℹ 90 more rows
+── Initial Conditions (x$inits): ──
+depot centr  peri   eff 
+    0     0     0     1 
+
+Simulation without uncertainty in parameters, omega, or sigma matricies
+
+── First part of data (object): ──
+# A tibble: 20,000 × 12
+  sim.id  time    C2    C3    CL ipredSim     sim depot  centr  peri   eff   CMT
+   &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1      1 0      249.  0     14.3     1      0.538     0 10000     0   1        4
+2      1 0      249.  0     14.3   249.   138.        0 10000     0   1        5
+3      1 0.485  185.  3.65  14.3     1.22   1.69      0  7426. 1085.  1.22     4
+4      1 0.485  185.  3.65  14.3   185.   174.        0  7426. 1085.  1.22     5
+5      1 0.970  138.  6.31  14.3     1.36   1.13      0  5530. 1874.  1.36     4
+6      1 0.970  138.  6.31  14.3   138.   209.        0  5530. 1874.  1.36     5
+# ℹ 19,994 more rows</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>summary <span class="ot">&lt;-</span> sim <span class="sc">%&gt;%</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(time,CMT) <span class="sc">%&gt;%</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">C2.5=</span><span class="fu">quantile</span>(sim, <span class="fl">0.05</span>),</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>            <span class="at">C2.50=</span><span class="fu">quantile</span>(sim, <span class="fl">0.50</span>),</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">C2.95=</span><span class="fu">quantile</span>(sim, <span class="fl">0.95</span>),</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.5=</span><span class="fu">quantile</span>(sim, <span class="fl">0.05</span>),</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.50=</span><span class="fu">quantile</span>(sim, <span class="fl">0.50</span>),</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">eff.95=</span><span class="fu">quantile</span>(sim, <span class="fl">0.95</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'time'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="fu">subset</span>(summary, CMT<span class="sc">==</span><span class="dv">5</span>), <span class="fu">aes</span>(time, C2<span class="fl">.50</span>)) <span class="sc">+</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>C2<span class="fl">.5</span>, <span class="at">ymax=</span>C2<span class="fl">.95</span>), <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="st">"Concentration"</span>) <span class="sc">+</span></span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>(<span class="at">sides=</span><span class="st">"l"</span>)<span class="sc">+</span> </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Concentration"</span>)</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="fu">subset</span>(summary, CMT<span class="sc">==</span><span class="dv">4</span>), <span class="fu">aes</span>(time, eff<span class="fl">.50</span>)) <span class="sc">+</span> </span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin=</span>eff<span class="fl">.5</span>, <span class="at">ymax=</span>eff<span class="fl">.95</span>), <span class="at">alpha=</span><span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="st">"Effect"</span>) <span class="sc">+</span></span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>(<span class="at">sides=</span><span class="st">"l"</span>)<span class="sc">+</span> </span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Effect"</span>)</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">+</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="simulating-a-population-of-individuals-with-different-dosing-regimens" class="level2" data-number="8.3">
+<h2 data-number="8.3" class="anchored" data-anchor-id="simulating-a-population-of-individuals-with-different-dosing-regimens"><span class="header-section-number">8.3</span> Simulating a population of individuals with different dosing regimens</h2>
+<p>It’s always nice to have a fixed dosing schedule in which everyone gets the right dose at precisely the right time, but in clinical practice this is something that doesn’t often happen. Sometimes, therefore, you might want to set up the dosing and observations in your simulations to match those of particular individuals in a clinical trial. To do this, you’ll have to create a data frame using the <code>rxode2</code> event specification, as well as an <code>ID</code> column to indicate which individual the doses and events refer to.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>ev1 <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amountUnits=</span><span class="st">"mg"</span>, <span class="at">timeUnits=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">10000</span>, <span class="at">cmt=</span><span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="dv">0</span>,<span class="dv">48</span>,<span class="at">length.out=</span><span class="dv">10</span>)</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>ev2 <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amountUnits=</span><span class="st">"mg"</span>, <span class="at">timeUnits=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">5000</span>, <span class="at">cmt=</span><span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="dv">0</span>,<span class="dv">48</span>,<span class="at">length.out=</span><span class="dv">8</span>)</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">data.frame</span>(<span class="at">ID=</span><span class="dv">1</span>, ev1<span class="sc">$</span><span class="fu">get.EventTable</span>()),</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>             <span class="fu">data.frame</span>(<span class="at">ID=</span><span class="dv">2</span>, ev2<span class="sc">$</span><span class="fu">get.EventTable</span>()))</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a><span class="do">## Note the number of subject is not needed since it is determined by the data</span></span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(mod, dat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ parameter labels from comments will be replaced by 'label()'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>using C compiler: ‘Apple clang version 15.0.0 (clang-1500.0.40.1)’
+using SDK: ‘’
+ld: warning: -single_module is obsolete
+ld: warning: -multiply_defined is obsolete</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">#sim %&gt;% select(id, time, eff, C2)</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(sim, <span class="fu">aes</span>(time, C2)) <span class="sc">+</span> </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>(<span class="st">"Concentration"</span>) <span class="sc">+</span></span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(<span class="sc">~</span>id) <span class="sc">+</span></span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">annotation_logticks</span>(<span class="at">sides=</span><span class="st">"l"</span>)<span class="sc">+</span> </span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Concentration"</span>)</span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(sim, <span class="fu">aes</span>(time, eff)) <span class="sc">+</span> </span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">col=</span><span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="st">"Effect"</span>) <span class="sc">+</span></span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="st">"Time"</span>) <span class="sc">+</span></span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_grid</span>(<span class="sc">~</span>id) <span class="sc">+</span></span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_light</span>() <span class="sc">+</span></span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Effect"</span>)</span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">/</span> p2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>This can, however, start getting a bit slow and unwieldy if you have a lot of patients. In this situation, a split-apply-combine strategy is often more efficient. We could split the data frame by <code>ID</code>, generate an event table for and apply the <code>rxSolve</code> function to each patient, and then recombine the results into a single data frame at the end.</p>
+</section>
+<section id="simulating-clinical-trials" class="level2" data-number="8.4">
+<h2 data-number="8.4" class="anchored" data-anchor-id="simulating-clinical-trials"><span class="header-section-number">8.4</span> Simulating clinical trials</h2>
+<p>By either using a simple single event table, or data from a clinical trial as described above, a complete clinical trial simulation can be performed.</p>
+<p>Typically in clinical trial simulations you want to account for the uncertainty in the fixed parameter estimates, and even the uncertainty in both your between subject variability as well as the unexplained variability.</p>
+<p><code>rxode2</code> allows you to account for these uncertainties by simulating multiple virtual “studies,” specified by the parameter <code>nStud</code>. Each of these studies samples a realization of fixed effect parameters and covariance matrices for the between subject variability(<code>omega</code>) and unexplained variabilities (<code>sigma</code>). Depending on the information you have from the models, there are a few strategies for simulating a realization of the <code>omega</code> and <code>sigma</code> matrices.</p>
+<p>The first strategy occurs when either there is not any standard errors for standard deviations (or related parameters), or there is a modeled correlation in the model you are simulating from. In that case the suggested strategy is to use the inverse Wishart (parameterized to scale to the conjugate prior)/<a href="https://en.wikipedia.org/wiki/Scaled_inverse_chi-squared_distribution">scaled inverse chi distribution</a>. this approach uses a single parameter to inform the variability of the covariance matrix sampled (the degrees of freedom).</p>
+<p>The second strategy occurs if you have standard errors on the variance/standard deviation with no modeled correlations in the covariance matrix. In this approach you perform separate simulations for the standard deviations and the correlation matrix. First you simulate the variance/standard deviation components in the <code>thetaMat</code> multivariate normal simulation. After simulation and transformation to standard deviations, a correlation matrix is simulated using the degrees of freedom of your covariance matrix. Combining the simulated standard deviation with the simulated correlation matrix will give a simulated covariance matrix. For smaller dimension covariance matrices (dimension &lt; 10x10) it is recommended you use the <code>lkj</code> distribution to simulate the correlation matrix. For higher dimension covariance matrices it is suggested you use the inverse wishart distribution (transformed to a correlation matrix) for the simulations.</p>
+<p>The covariance/variance prior is simulated from <code>rxode2</code>s <code>cvPost()</code> function.</p>
+</section>
+<section id="simulation-from-inverse-wishart-correlations" class="level2" data-number="8.5">
+<h2 data-number="8.5" class="anchored" data-anchor-id="simulation-from-inverse-wishart-correlations"><span class="header-section-number">8.5</span> Simulation from inverse Wishart correlations</h2>
+<p>An example of this simulation is below:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Creating covariance matrix</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(<span class="dv">8</span><span class="sc">^</span><span class="dv">2</span>), <span class="dv">8</span>, <span class="dv">8</span>)</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>tMat <span class="ot">&lt;-</span> <span class="fu">tcrossprod</span>(tmp, tmp) <span class="sc">/</span> (<span class="dv">8</span> <span class="sc">^</span> <span class="dv">2</span>)</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a><span class="fu">dimnames</span>(tMat) <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="cn">NULL</span>, <span class="fu">names</span>(mod2<span class="sc">$</span>theta)[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>])</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(mod2, ev, <span class="at">nSub=</span><span class="dv">100</span>, <span class="at">thetaMat=</span>tMat, <span class="at">nStud=</span><span class="dv">10</span>,</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">dfSub=</span><span class="dv">10</span>, <span class="at">dfObs=</span><span class="dv">100</span>)</span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>s <span class="ot">&lt;-</span>sim <span class="sc">%&gt;%</span> <span class="fu">confint</span>(<span class="st">"sim"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>summarizing data...done</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(s)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>If you wish you can see what <code>omega</code> and <code>sigma</code> was used for each virtual study by accessing them in the solved data object with <code>$omega.list</code> and <code>$sigma.list</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sim<span class="sc">$</span>omegaList)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+          eta.Cl
+eta.Cl 0.2123854
+
+[[2]]
+          eta.Cl
+eta.Cl 0.2439259
+
+[[3]]
+          eta.Cl
+eta.Cl 0.3853127
+
+[[4]]
+          eta.Cl
+eta.Cl 0.1724243
+
+[[5]]
+          eta.Cl
+eta.Cl 0.2478496
+
+[[6]]
+          eta.Cl
+eta.Cl 0.1835147</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(sim<span class="sc">$</span>sigmaList)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[[1]]
+            err.eff      err.C2
+err.eff  1.14300092 -0.02522627
+err.C2  -0.02522627  0.91792638
+
+[[2]]
+            err.eff      err.C2
+err.eff  1.03843335 -0.02825221
+err.C2  -0.02825221  0.89033230
+
+[[3]]
+          err.eff    err.C2
+err.eff 1.1376544 0.2073658
+err.C2  0.2073658 1.1247929
+
+[[4]]
+           err.eff     err.C2
+err.eff  1.0465015 -0.0832682
+err.C2  -0.0832682  0.9850565
+
+[[5]]
+           err.eff     err.C2
+err.eff  1.2164896 -0.1675439
+err.C2  -0.1675439  1.4092104
+
+[[6]]
+           err.eff     err.C2
+err.eff 0.86976132 0.01196649
+err.C2  0.01196649 0.99729356</code></pre>
+</div>
+</div>
+<p>You can also see the parameter realizations from the <code>$params</code> data frame.</p>
+</section>
+<section id="simulate-using-variancestandard-deviation-standard-errors" class="level2" data-number="8.6">
+<h2 data-number="8.6" class="anchored" data-anchor-id="simulate-using-variancestandard-deviation-standard-errors"><span class="header-section-number">8.6</span> Simulate using variance/standard deviation standard errors</h2>
+<p>Lets assume we wish to simulate from <a href="https://github.com/UUPharmacometrics/xpose/blob/master/inst/extdata/run001.lst">the nonmem run included in xpose</a></p>
+<p>First we setup the model; Since we are taking this from nonmem and would like to use the more free-form style from the classic <code>rxode2</code> model we start from the classic model:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>rx1 <span class="ot">&lt;-</span> <span class="fu">rxode2</span>({</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  cl <span class="ot">&lt;-</span> tcl<span class="sc">*</span>(<span class="dv">1</span><span class="sc">+</span>crcl.cl<span class="sc">*</span>(CLCR<span class="dv">-65</span>)) <span class="sc">*</span> <span class="fu">exp</span>(eta.cl)</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  v <span class="ot">&lt;-</span> tv <span class="sc">*</span> WT <span class="sc">*</span> <span class="fu">exp</span>(eta.v)</span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  ka <span class="ot">&lt;-</span> tka <span class="sc">*</span> <span class="fu">exp</span>(eta.ka)</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a>  ipred <span class="ot">&lt;-</span> <span class="fu">linCmt</span>()</span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>  obs <span class="ot">&lt;-</span> ipred <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">+</span> prop.sd) <span class="sc">+</span> add.sd </span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>using C compiler: ‘Apple clang version 15.0.0 (clang-1500.0.40.1)’
+using SDK: ‘’
+ld: warning: -single_module is obsolete
+ld: warning: -multiply_defined is obsolete</code></pre>
+</div>
+</div>
+<p>Next we input the estimated parameters:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>theta <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">tcl=</span><span class="fl">2.63E+01</span>, <span class="at">tv=</span><span class="fl">1.35E+00</span>, <span class="at">tka=</span><span class="fl">4.20E+00</span>, <span class="at">tlag=</span><span class="fl">2.08E-01</span>,</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">prop.sd=</span><span class="fl">2.05E-01</span>, <span class="at">add.sd=</span><span class="fl">1.06E-02</span>, <span class="at">crcl.cl=</span><span class="fl">7.17E-03</span>,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>           <span class="do">## Note that since we are using the separation strategy the ETA variances are here too</span></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">eta.cl=</span><span class="fl">7.30E-02</span>,  <span class="at">eta.v=</span><span class="fl">3.80E-02</span>, <span class="at">eta.ka=</span><span class="fl">1.91E+00</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>And also their covariances; To me, the easiest way to create a named covariance matrix is to use <code>lotri()</code>:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>thetaMat <span class="ot">&lt;-</span> <span class="fu">lotri</span>(</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    tcl <span class="sc">+</span> tv <span class="sc">+</span> tka <span class="sc">+</span> tlag <span class="sc">+</span> prop.sd <span class="sc">+</span> add.sd <span class="sc">+</span> crcl.cl <span class="sc">+</span> eta.cl <span class="sc">+</span> eta.v <span class="sc">+</span> eta.ka <span class="sc">~</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(<span class="fl">7.95E-01</span>,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>          <span class="fl">2.05E-02</span>, <span class="fl">1.92E-03</span>,</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>          <span class="fl">7.22E-02</span>, <span class="sc">-</span><span class="fl">8.30E-03</span>, <span class="fl">6.55E-01</span>,</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>          <span class="sc">-</span><span class="fl">3.45E-03</span>, <span class="sc">-</span><span class="fl">6.42E-05</span>, <span class="fl">3.22E-03</span>, <span class="fl">2.47E-04</span>,</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>          <span class="fl">8.71E-04</span>, <span class="fl">2.53E-04</span>, <span class="sc">-</span><span class="fl">4.71E-03</span>, <span class="sc">-</span><span class="fl">5.79E-05</span>, <span class="fl">5.04E-04</span>,</span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>          <span class="fl">6.30E-04</span>, <span class="sc">-</span><span class="fl">3.17E-06</span>, <span class="sc">-</span><span class="fl">6.52E-04</span>, <span class="sc">-</span><span class="fl">1.53E-05</span>, <span class="sc">-</span><span class="fl">3.14E-05</span>, <span class="fl">1.34E-05</span>,</span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>          <span class="sc">-</span><span class="fl">3.30E-04</span>, <span class="fl">5.46E-06</span>, <span class="sc">-</span><span class="fl">3.15E-04</span>, <span class="fl">2.46E-06</span>, <span class="fl">3.15E-06</span>, <span class="sc">-</span><span class="fl">1.58E-06</span>, <span class="fl">2.88E-06</span>,</span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a>          <span class="sc">-</span><span class="fl">1.29E-03</span>, <span class="sc">-</span><span class="fl">7.97E-05</span>, <span class="fl">1.68E-03</span>, <span class="sc">-</span><span class="fl">2.75E-05</span>, <span class="sc">-</span><span class="fl">8.26E-05</span>, <span class="fl">1.13E-05</span>, <span class="sc">-</span><span class="fl">1.66E-06</span>, <span class="fl">1.58E-04</span>,</span>
+<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a>          <span class="sc">-</span><span class="fl">1.23E-03</span>, <span class="sc">-</span><span class="fl">1.27E-05</span>, <span class="sc">-</span><span class="fl">1.33E-03</span>, <span class="sc">-</span><span class="fl">1.47E-05</span>, <span class="sc">-</span><span class="fl">1.03E-04</span>, <span class="fl">1.02E-05</span>, <span class="fl">1.67E-06</span>, <span class="fl">6.68E-05</span>, <span class="fl">1.56E-04</span>,</span>
+<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>          <span class="fl">7.69E-02</span>, <span class="sc">-</span><span class="fl">7.23E-03</span>, <span class="fl">3.74E-01</span>, <span class="fl">1.79E-03</span>, <span class="sc">-</span><span class="fl">2.85E-03</span>, <span class="fl">1.18E-05</span>, <span class="sc">-</span><span class="fl">2.54E-04</span>, <span class="fl">1.61E-03</span>, <span class="sc">-</span><span class="fl">9.03E-04</span>, <span class="fl">3.12E-01</span>))</span>
+<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>evw <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amount.units=</span><span class="st">"mg"</span>, <span class="at">time.units=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>    <span class="do">## For this problem we will simulate with sampling windows</span></span>
+<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="fu">list</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>),</span>
+<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>       <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="dv">1</span>),</span>
+<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a>       <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>),</span>
+<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a>       <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">6</span>),</span>
+<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>       <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">12</span>))) <span class="sc">%&gt;%</span></span>
+<span id="cb59-22"><a href="#cb59-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">id=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">1000</span>)</span>
+<span id="cb59-23"><a href="#cb59-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-24"><a href="#cb59-24" aria-hidden="true" tabindex="-1"></a><span class="do">## From the run we know that:</span></span>
+<span id="cb59-25"><a href="#cb59-25" aria-hidden="true" tabindex="-1"></a><span class="do">##   total number of observations is: 476</span></span>
+<span id="cb59-26"><a href="#cb59-26" aria-hidden="true" tabindex="-1"></a><span class="do">##    Total number of individuals:     74</span></span>
+<span id="cb59-27"><a href="#cb59-27" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(rx1, theta, evw,  <span class="at">nSub=</span><span class="dv">100</span>, <span class="at">nStud=</span><span class="dv">10</span>,</span>
+<span id="cb59-28"><a href="#cb59-28" aria-hidden="true" tabindex="-1"></a>                <span class="at">thetaMat=</span>thetaMat,</span>
+<span id="cb59-29"><a href="#cb59-29" aria-hidden="true" tabindex="-1"></a>                <span class="do">## Match boundaries of problem</span></span>
+<span id="cb59-30"><a href="#cb59-30" aria-hidden="true" tabindex="-1"></a>                <span class="at">thetaLower=</span><span class="dv">0</span>, </span>
+<span id="cb59-31"><a href="#cb59-31" aria-hidden="true" tabindex="-1"></a>                <span class="at">sigma=</span><span class="fu">c</span>(<span class="st">"prop.sd"</span>, <span class="st">"add.sd"</span>), <span class="do">## Sigmas are standard deviations</span></span>
+<span id="cb59-32"><a href="#cb59-32" aria-hidden="true" tabindex="-1"></a>                <span class="at">sigmaXform=</span><span class="st">"identity"</span>, <span class="co"># default sigma xform="identity"</span></span>
+<span id="cb59-33"><a href="#cb59-33" aria-hidden="true" tabindex="-1"></a>                <span class="at">omega=</span><span class="fu">c</span>(<span class="st">"eta.cl"</span>, <span class="st">"eta.v"</span>, <span class="st">"eta.ka"</span>), <span class="do">## etas are variances</span></span>
+<span id="cb59-34"><a href="#cb59-34" aria-hidden="true" tabindex="-1"></a>                <span class="at">omegaXform=</span><span class="st">"variance"</span>, <span class="co"># default omega xform="variance"</span></span>
+<span id="cb59-35"><a href="#cb59-35" aria-hidden="true" tabindex="-1"></a>                <span class="at">iCov=</span><span class="fu">data.frame</span>(<span class="at">WT=</span><span class="fu">rnorm</span>(<span class="dv">1000</span>, <span class="dv">70</span>, <span class="dv">15</span>), <span class="at">CLCR=</span><span class="fu">rnorm</span>(<span class="dv">1000</span>, <span class="dv">65</span>, <span class="dv">25</span>)),</span>
+<span id="cb59-36"><a href="#cb59-36" aria-hidden="true" tabindex="-1"></a>                <span class="at">dfSub=</span><span class="dv">74</span>, <span class="at">dfObs=</span><span class="dv">476</span>);</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ thetaMat has too many items, ignored: 'tlag'</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(sim)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>── Solved rxode2 object ──
+── Parameters ($params): ──
+# A tibble: 10,000 × 9
+   sim.id id      tcl crcl.cl  eta.cl    tv   eta.v   tka eta.ka
+    &lt;int&gt; &lt;fct&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;
+ 1      1 1      26.5   0.162 -0.449   1.40  0.0562  4.64  1.09 
+ 2      1 2      26.5   0.162 -0.586   1.40  0.557   4.64  0.754
+ 3      1 3      26.5   0.162 -1.13    1.40 -0.511   4.64  0.382
+ 4      1 4      26.5   0.162  0.393   1.40  0.275   4.64 -0.240
+ 5      1 5      26.5   0.162  2.61    1.40  1.01    4.64  1.30 
+ 6      1 6      26.5   0.162 -0.0363  1.40  0.932   4.64  0.466
+ 7      1 7      26.5   0.162  0.487   1.40  0.976   4.64 -1.12 
+ 8      1 8      26.5   0.162 -0.544   1.40  0.0459  4.64 -0.642
+ 9      1 9      26.5   0.162 -0.540   1.40 -0.209   4.64  0.861
+10      1 10     26.5   0.162  2.47    1.40 -1.78    4.64 -0.496
+# ℹ 9,990 more rows
+── Initial Conditions ($inits): ──
+named numeric(0)
+
+Simulation with uncertainty in:
+• parameters ($thetaMat for changes)
+• omega matrix ($omegaList)
+• sigma matrix ($sigmaList)
+
+── First part of data (object): ──
+# A tibble: 50,000 × 10
+  sim.id    id  time    cl     v    ka ipred     obs    WT  CLCR
+   &lt;int&gt; &lt;int&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+1      1     1 0.118  10.1  118. 13.8  0.678 -0.371   79.7  62.5
+2      1     1 0.579  10.1  118. 13.8  0.813  1.65    79.7  62.5
+3      1     1 2.78   10.1  118. 13.8  0.673  3.16    79.7  62.5
+4      1     1 5.09   10.1  118. 13.8  0.553  0.987   79.7  62.5
+5      1     1 8.88   10.1  118. 13.8  0.399 -0.0103  79.7  62.5
+6      1     2 0.232  21.8  179.  9.86 0.493  0.227   73.5  68.0
+# ℹ 49,994 more rows</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Notice that the simulation time-points change for the individual</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a><span class="do">## If you want the same sampling time-points you can do that as well:</span></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>evw <span class="ot">&lt;-</span> <span class="fu">et</span>(<span class="at">amount.units=</span><span class="st">"mg"</span>, <span class="at">time.units=</span><span class="st">"hours"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">amt=</span><span class="dv">100</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="dv">0</span>, <span class="dv">24</span>, <span class="at">length.out=</span><span class="dv">50</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">et</span>(<span class="at">id=</span><span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>)</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(rx1, theta, evw,  <span class="at">nSub=</span><span class="dv">100</span>, <span class="at">nStud=</span><span class="dv">10</span>,</span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">thetaMat=</span>thetaMat,</span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>                <span class="do">## Match boundaries of problem</span></span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">thetaLower=</span><span class="dv">0</span>, </span>
+<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">sigma=</span><span class="fu">c</span>(<span class="st">"prop.sd"</span>, <span class="st">"add.sd"</span>), <span class="do">## Sigmas are standard deviations</span></span>
+<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">sigmaXform=</span><span class="st">"identity"</span>, <span class="co"># default sigma xform="identity"</span></span>
+<span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">omega=</span><span class="fu">c</span>(<span class="st">"eta.cl"</span>, <span class="st">"eta.v"</span>, <span class="st">"eta.ka"</span>), <span class="do">## etas are variances</span></span>
+<span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">omegaXform=</span><span class="st">"variance"</span>, <span class="co"># default omega xform="variance"</span></span>
+<span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a>                <span class="at">iCov=</span><span class="fu">data.frame</span>(<span class="at">WT=</span><span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">70</span>, <span class="dv">15</span>), <span class="at">CLCR=</span><span class="fu">rnorm</span>(<span class="dv">100</span>, <span class="dv">65</span>, <span class="dv">25</span>)),</span>
+<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a>                <span class="at">dfSub=</span><span class="dv">74</span>, <span class="at">dfObs=</span><span class="dv">476</span>,</span>
+<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a>                <span class="at">resample=</span><span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>ℹ thetaMat has too many items, ignored: 'tlag'</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>s <span class="ot">&lt;-</span>sim <span class="sc">%&gt;%</span> <span class="fu">confint</span>(<span class="fu">c</span>(<span class="st">"ipred"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>summarizing data...</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>done</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(s)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="simulate-without-uncertainty-in-omega-or-sigma-parameters" class="level2" data-number="8.7">
+<h2 data-number="8.7" class="anchored" data-anchor-id="simulate-without-uncertainty-in-omega-or-sigma-parameters"><span class="header-section-number">8.7</span> Simulate without uncertainty in <code>omega</code> or <code>sigma</code> parameters</h2>
+<p>If you do not wish to sample from the prior distributions of either the <code>omega</code> or <code>sigma</code> matrices, you can turn off this feature by specifying the <code>simVariability = FALSE</code> option when solving:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb69"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>sim  <span class="ot">&lt;-</span> <span class="fu">rxSolve</span>(mod2, ev, <span class="at">nSub=</span><span class="dv">100</span>, <span class="at">thetaMat=</span>tMat, <span class="at">nStud=</span><span class="dv">10</span>,</span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">simVariability=</span><span class="cn">FALSE</span>)</span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>s <span class="ot">&lt;-</span>sim <span class="sc">%&gt;%</span> <span class="fu">confint</span>(<span class="fu">c</span>(<span class="st">"centr"</span>, <span class="st">"eff"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>summarizing data...done</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(s)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="08_populations_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Note since realizations of <code>omega</code> and <code>sigma</code> were not simulated, <code>$omegaList</code> and <code>$sigmaList</code> both return <code>NULL</code>.</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

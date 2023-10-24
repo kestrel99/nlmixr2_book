@@ -396,7 +396,7 @@ div.csl-indent {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><span id="nlme" class="quarto-section-identifier"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">A brief introduction to nonlinear mixed-effects modeling</span></span></h1>
+<h1 class="title"><span id="sec-nlme" class="quarto-section-identifier"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">A brief introduction to nonlinear mixed-effects modeling</span></span></h1>
 </div>
 
 
@@ -508,6 +508,22 @@ V_i = V \cdot \text{exp}(\eta_{V,i} + \kappa_{V,ij})\\
 </div>
 </div>
 <p>Every observation has an associated model prediction, and the difference between them is the residual, which in our model is proportional to the size of the observation. That proportion can lie anywhere within this distribution.</p>
+<p>Residual variability can be defined in a number of ways. The first, in which an additive relationship is assumed, is defined formally as:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} + \sigma_{i,j}\\
+\sigma \sim N(0, \epsilon)
+\]</span> where <span class="math inline">\(DV_{obs,i,j}\)</span> is the osberved value of the dependent variable, <span class="math inline">\(DV_{pred,i,j}\)</span> is the predicted value of the dependent variable, and <span class="math inline">\(\sigma_{add,i,j}\)</span> is additive residual error, defined as being normally distributed with mean 0 and variance <span class="math inline">\(\epsilon_{add}^2\)</span>.</p>
+<p>Residual error can also be modelled to be proportional:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{i,j})\\
+\sigma \sim N(0, \epsilon)
+\]</span></p>
+<p>Or both:</p>
+<p><span class="math display">\[
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j}) + \sigma_{add,i,j}\\
+\sigma_{prop} \sim N(0, \epsilon_{prop})\\
+\sigma_{add} \sim N(0, \epsilon_{add})
+\]</span></p>
 <p>The model parameters work much the same way. Let’s look at volume of distribution (V) one more time. Here we have the distribution of <span class="math inline">\(\eta_{V,i}\)</span>, assuming that <span class="math inline">\(\omega^2_V\)</span> is 0.25 (this is a variance, corresponding to a standard deviation of 0.5). Recall</p>
 <p><span class="math display">\[
 V_i = V \cdot \text{exp}(\eta_{V,i})
