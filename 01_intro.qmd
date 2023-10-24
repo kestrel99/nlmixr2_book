@@ -1,8 +1,8 @@
-# Introduction
+# Introduction {#intro}
 
 ## Pharmacometrics
 
-Wikipedia defines pharmacometrics (PMx) as a field of study of the methodology and application of mathematical models for disease and pharmacological measurement. It applies mathematical models of biology, pharmacology, disease, and physiology to describe and quantify interactions between xenobiotics (drugs) and patients (human and non-human), including both beneficial and adverse effects. It is normally applied to combine data from drugs, diseases and clinical trials to aid efficient drug development, regulatory decisions and rational drug treatment in patients.
+[Wikipedia](https://en.wikipedia.org/wiki/Pharmacometrics) defines pharmacometrics (PMx) as a field of study of the methodology and application of mathematical models for disease and pharmacological measurement. It applies mathematical models of biology, pharmacology, disease, and physiology to describe and quantify interactions between xenobiotics (drugs) and patients (human and non-human), including both beneficial and adverse effects. It is normally applied to combine data from drugs, diseases and clinical trials to aid efficient drug development, regulatory decisions and rational drug treatment in patients.
 
 Pharmacometrics rolls up modeling and simulation for pharmacokinetics, pharmacodynamics, and #DiseaseProgression, with a focus on populations and variability. A major focus is to understand variability in drug response, which can be predictable (e.g. due to differences in body weight or kidney function) or unpredictable (differences between subjects seem random, but likely reflect a lack of knowledge or data).
 
@@ -12,7 +12,7 @@ What this boils down to is using mathematical/statistical models to help explain
 
 This sounds complicated - and it can be - but it's based on the well-stirred compartmental model for PK, a well-established set of principles for how systems like these can be approximated.
 
-I promised you beer! It's actually a pretty good example. PK describes what happens to the alcohol (ethanol) you consume between the glass and the bathroom, and PD describes what it does while it's circulating in your blood (quite a few things, including making you tipsy). Ethanol is a pretty interesting case, because it's eye-wateringly complex. The "DrinkMe" simulation on Nick Holford's website is a fun interactive example of how it fits together! You can find it at http://holford.fmhs.auckland.ac.nz/research/ethanol.
+I promised you beer! It's actually a pretty good example. PK describes what happens to the alcohol (ethanol) you consume between the glass and the bathroom, and PD describes what it does while it's circulating in your blood (quite a few things, including making you tipsy). Ethanol is a pretty interesting case, because it's eye-wateringly complex. The "DrinkMe" simulation on Nick Holford's website is a fun interactive example of how it fits together! You can find it at <http://holford.fmhs.auckland.ac.nz/research/ethanol>.
 
 So pharmacometrics can help us understand how drugs behave in different people. The "DrinkMe" model includes body weight - the bigger you are, the bigger your organs are (usually) and the more machinery you have for metabolizing substances like ethanol, so the slower you get drunk, and if you've eaten something, the alcohol will take longer to get into your system (although these are just two aspects of a very complex system).
 
@@ -22,7 +22,7 @@ We can use pharmacometric models like these to simulate clinical trials, dose re
 
 Later on in drug development, as we get close to registration, we can use these models to identify covariates whcih might inform differences in exposure and effect between patients (like age, weight, and sex), and to quantify the relationships between dose, exposure, and response for efficacy (e.g. how well the drug does at reducing or eliminating a tumour) and safety (e.g. how many unwanted side effects the drug generates at a useful dose).
 
-It's not just about the drugs themselves. Drug-disease and disease progression models are also an area in which pharmacometrics continues to have an impact - FDA maintains a list the ones they've developed internally (https://www.fda.gov/about-fda/center-drug-evaluation-and-research-cder/division-pharmacometrics), including examples for Alzheimer's disease and diabetes, although there are many, many more.
+It's not just about the drugs themselves. Drug-disease and disease progression models are also an area in which pharmacometrics continues to have an impact - FDA maintains a list the ones they've developed internally (<https://www.fda.gov/about-fda/center-drug-evaluation-and-research-cder/division-pharmacometrics>), including examples for Alzheimer's disease and diabetes, although there are many, many more.
 
 So far we've mostly talked about empirical, data-driven models, but pharmacometrics goes further, especially now that the computers are getting so fast (models take time to fit to data, and the more complex they are, and the more patients you have, the longer they take).
 
@@ -78,7 +78,7 @@ This book assumes you're working with relatively small in-memory datasets. The k
 
 ### Data science
 
-We are dealing with specifically pharmacometric data analysis round these parts. If it's pure data science you're interested in, we heartily recommend [R for Data Science](https://github.com/hadley/r4ds/), which provides a comprehensive grounding. (We also swiped its structure for our book, which is a compliment of a sort, we guess.)
+We are dealing with specifically pharmacometric data analysis round these parts. If it's pure data science you're interested in, we heartily recommend [R for Data Science](https://github.com/hadley/r4ds/), which provides a comprehensive grounding.
 
 ### Python/Julia/Matlab/SAS/Ruby on Rails/etc
 
@@ -119,39 +119,19 @@ library(nlmixr2)
 
 ## Acknowledgements
 
-We have a lot of people to thank. `nlmixr2` is the product of countless hours of hard work by many, many contributors. 
+We have a lot of people to thank. `nlmixr2` is the product of countless hours of hard work by many, many contributors.
 
-First and foremost, Wenping Wang is in many ways the father of `nlmixr`. It
-was his work that provided the foundation for this tool, and although he has
-since moved on from the core development team, everything we’ve built started
-with him.
+First and foremost, Wenping Wang is in many ways the father of `nlmixr`. It was his work that provided the foundation for this tool, and although he has since moved on from the core development team, everything we've built started with him.
 
-Teun Post was there at the very beginning, and was responsible for a lot of
-the initial documentation for `nlmixr`. Although he too has moved on, his
-contribution was large and fundamental.
+Teun Post was there at the very beginning, and was responsible for a lot of the initial documentation for `nlmixr`. Although he too has moved on, his contribution was large and fundamental.
 
-The `nlmixr` project has relied heavily on support from our day jobs. Matt, Mirjam,
-Yuan, Huijuan and Wenping were given the time they needed to
-work on this project by Novartis, which remains an enthusiastic core sponsor of
-the team and the project. Mick Looby, Lisa Hendricks and Etienne Pigeolet are
-worthy of special mention here. Justin and Rik have had their time sponsored
-by Occams, Richard and Teun were and are supported by LAP&P, Johnson &
-Johnson, Seattle Genetics, Avrobio, Human Predictions and Certara have all
-donated their associates’ time to help us build this tool. We are grateful to all
-of them.
+The `nlmixr` project has relied heavily on support from our day jobs. Matt, Mirjam, Yuan, Huijuan and Wenping were given the time they needed to work on this project by Novartis, which remains an enthusiastic core sponsor of the team and the project. Mick Looby, Lisa Hendricks and Etienne Pigeolet are worthy of special mention here. Justin and Rik have had their time sponsored by Occams, Richard and Teun were and are supported by LAP&P, Johnson & Johnson, Seattle Genetics, Avrobio, Human Predictions and Certara have all donated their associates' time to help us build this tool. We are grateful to all of them.
 
-Without `RxODE`, there would be no `nlmixr`. We would be remiss in not
-mentioning the early contributions of Melissa Hallow, David James and Wenping
-in the development of this, the engine that drives `nlmixr` and `nlmixr2`.
+Without `RxODE`, there would be no `nlmixr`. We would be remiss in not mentioning the early contributions of Melissa Hallow, David James and Wenping in the development of this, the engine that drives `nlmixr` and `nlmixr2`.
 
-We’d all like to thank our families and colleagues for putting up with the odd
-hours and late nights and copious amounts of swearing emanating from our
-offices, both at work, and more often, recently, at home.
+We'd all like to thank our families and colleagues for putting up with the odd hours and late nights and copious amounts of swearing emanating from our offices, both at work, and more often, recently, at home.
 
-Those we’re most grateful to, though, are our users: the early adopters, the
-curious, and most importantly, the bug reporters who have put `nlmixr` through
-its paces over the years and helped it become what it is today. Thank you, and
-we hope you’ll stay with us as we grow.
+Those we're most grateful to, though, are our users: the early adopters, the curious, and most importantly, the bug reporters who have put `nlmixr` through its paces over the years and helped it become what it is today. Thank you, and we hope you'll stay with us as we grow.
 
 ## Colophon
 

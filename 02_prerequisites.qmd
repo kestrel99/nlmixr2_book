@@ -1,8 +1,8 @@
-# Prerequisites
+# Prerequisites {#prerequisites} 
 
 ## Hardware
 
-It probably goes without saying that you're going to need a computer of some kind. 
+It probably goes without saying that you're going to need a computer of some kind.
 
 At a minimum, you're going to need a reasonably recent workstation or laptop (PC or Mac) running Windows, macOS or Linux, and equipped with a 64-bit processor with x86-compatible architecture (such as AMD64, Intel 64, x86-64, IA-32e, EM64T, or x64 chips), with as many cores as you can get away with. You'll need sufficient disk space, but in this day and age you'll probably be fine with what you have as long as it's more than 5Gb or so. You can theoretically run R with 2 Gb of RAM, but in practice we think 16 Gb is an absolute drop dead minimum. R is a memory hog, so the more the better.
 
@@ -32,18 +32,18 @@ For Linux, there are many ways to get the tools you need installed and working. 
 
 ### `nlmixr2` and dependencies
 
-In principle, you should be able to install everything using one command in R: `install.packages("nlmixr2", dependencies = TRUE)`. Assuming your environment is properly set up, everything will download and install itself. Get some coffee (or tea, or whatever beverage you like) because this step will take a bit of time. There are a lot of packages. 
+In principle, you should be able to install everything using one command in R: `install.packages("nlmixr2", dependencies = TRUE)`. Assuming your environment is properly set up, everything will download and install itself. Get some coffee (or tea, or whatever beverage you like) because this step will take a bit of time. There are a lot of packages.
 
-If you run into any unexpected issues, you can have a look at [www.nlmixr2.org](https://www.nlmixr2.org) to see whether there's anything specific you need to do for your platform or version of R. If you don't have any luck, submit an issue on the `nlmixr2` GitHub site ([github.com/nlmixr2/nlmixr2](https://github.com/nlmixr2/nlmixr2)) and one of the developers will be in touch to help.  
+If you run into any unexpected issues, you can have a look at [www.nlmixr2.org](https://www.nlmixr2.org) to see whether there's anything specific you need to do for your platform or version of R. If you don't have any luck, submit an issue on the `nlmixr2` GitHub site ([github.com/nlmixr2/nlmixr2](https://github.com/nlmixr2/nlmixr2)) and one of the developers will be in touch to help.
 
 ### Supplemental packages
 
 Although these packages are not absolutely required for nlmixr2 to work, they add additional functionality, and you'll need them to get the most out of this book, so we strongly recommend that you install them as well.
 
-* `ggPMX`: a toolkit providing a set of standardized diagnostic plots, designed from the ground up to play well with `nlmixr2`. Install using `install.packages("ggPMX", dependencies = TRUE)`.
-* `shinyMixR`: a `shiny`-based graphical user interface for `nlmixr2`. The package provides a dashboard-like interface and helps in managing, running, editing and analysing `nlmixr2` models. This one is not yet on CRAN but can be downloaded from GitHub: `devtools::install_github("richardhooijmaijers/shinyMixR")`.
-* `xgxr`: a toolkit for exploring PKPD data. `install.packages("xgxr", dependencies = TRUE)`
-* `xpose.nlmixr2`: an interface to the absurdly useful pharmacometric model goodness-of-fit toolkit `xpose`, it provides an array of pretty diagnostic plots. `install.packages("xpose.nlmixr2", dependencies = TRUE)`
+-   `ggPMX`: a toolkit providing a set of standardized diagnostic plots, designed from the ground up to play well with `nlmixr2`. Install using `install.packages("ggPMX", dependencies = TRUE)`.
+-   `shinyMixR`: a `shiny`-based graphical user interface for `nlmixr2`. The package provides a dashboard-like interface and helps in managing, running, editing and analysing `nlmixr2` models. This one is not yet on CRAN but can be downloaded from GitHub: `devtools::install_github("richardhooijmaijers/shinyMixR")`.
+-   `xgxr`: a toolkit for exploring PKPD data. `install.packages("xgxr", dependencies = TRUE)`
+-   `xpose.nlmixr2`: an interface to the absurdly useful pharmacometric model goodness-of-fit toolkit `xpose`, it provides an array of pretty diagnostic plots. `install.packages("xpose.nlmixr2", dependencies = TRUE)`
 
 ### RStudio
 
@@ -51,23 +51,20 @@ RStudio is an integrated development environment (IDE) for R (and Python), and i
 
 ### Emacs
 
-GNU Emacs is an extensible, customizable, free/libre text editor available for any platform you can think of most likely a few that you can't. It is both massively powerful and massively challenging to get to grips with, but `nlmixr2` was largely developed with it, and many of the development team swear by it (the rest of us swear at it). Still, if console-based editors are your thing, have at it. There is no better tool of its type. You can download it for your platform from [www.gnu.org/software/emacs](https://www.gnu.org/software/emacs/). Don't say we didn't warn you. 
+GNU Emacs is an extensible, customizable, free/libre text editor available for any platform you can think of most likely a few that you can't. It is both massively powerful and massively challenging to get to grips with, but `nlmixr2` was largely developed with it, and many of the development team swear by it (the rest of us swear at it). Still, if console-based editors are your thing, have at it. There is no better tool of its type. You can download it for your platform from [www.gnu.org/software/emacs](https://www.gnu.org/software/emacs/). Don't say we didn't warn you.
 
 To get the most out of Emacs, you'll need the Emacs Speaks Statistics (ESS) add-on package. Visit [ess.r-project.org](https://ess.r-project.org/) to get started. Windows users, for example, would be best served downloading an all-in-one Emacs distribution that includes ESS baked in. Linux users can use their package managers to get up and running.
 
 ### Other editors
 
-There are several other IDEs that we're told work well, including Visual Studio Code ([code.visualstudio.com](https://code.visualstudio.com/)) and its fully open-source variant VSCodium ([vscodium.com](https://vscodium.com/)). At the end of the day you can use anything you feel comfortable with, including the built-in R IDE. 
+There are several other IDEs that we're told work well, including Visual Studio Code ([code.visualstudio.com](https://code.visualstudio.com/)) and its fully open-source variant VSCodium ([vscodium.com](https://vscodium.com/)). At the end of the day you can use anything you feel comfortable with, including the built-in R IDE.
 
 ## Docker
 
-If all this local installation stuff looks daunting, you could always use our Docker image, which comes with everything pre-installed. 
+If all this local installation stuff looks daunting, you could always use our Docker image, which comes with everything pre-installed.
 
-Docker ([docker.com](https://www.docker.com)) describes itself as an open platform for developing, shipping, and running applications. "Dockerizing" a software package effectively separates the tool from the underlying operating system, by placing it in a loosely isolated environment called a container. Containers are lightweight and contain everything needed to run the application, so you can completely forget about dependencies and conflicts and just get on with the job. 
+Docker ([docker.com](https://www.docker.com)) describes itself as an open platform for developing, shipping, and running applications. "Dockerizing" a software package effectively separates the tool from the underlying operating system, by placing it in a loosely isolated environment called a container. Containers are lightweight and contain everything needed to run the application, so you can completely forget about dependencies and conflicts and just get on with the job.
 
 To use the Dockerized version of `nlmixr2`, which comes with the latest versions of R, nlmixr2 and all its dependencies and relevant add-ons, as well as RStudio Server (a browser-based version of RStudio Desktop, also free and just as powerful), you need to install Docker for your platform, and then execute `docker run -v /myfiles/:/home/rstudio/myfiles -d -p 8787:8787 -e PASSWORD=nlmixr nlmixr/nlmixr2prod:V0.2`. This will download all the necessary components of the system and run the container. Note that RStudio Server cannot see the host operating system - it's running inside a virtual machine - so you need to "mount" a folder on your local system, in this case assumed to be `/myfiles`, to a folder in side the VM (`/home/rstudio/myfiles` in this example) if you intend to use your own files and transfer results back to the host. You'll need to change this suit your local system. This example also sets a password (`nlmixr`).
 
 The first time will take a few minutes, but after that it will start up much more quickly. You can reach the system by navigating to https://127.0.0.1:8787. Full details and help with any troubleshooting that might be necessary can be found at [github.com/RichardHooijmaijers/nlmixr.docker](https://github.com/RichardHooijmaijers/nlmixr.docker).
-
-
-

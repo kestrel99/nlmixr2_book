@@ -4,15 +4,15 @@ project:
 book:
   title: "Nonlinear mixed-effects modelling with nlmixr2"
   author: 
-  - Justin J. Wilkins, Occams
   - Matthew Fidler, Novartis
+  - Justin J. Wilkins, Occams
   
-  date: "30/01/2023"
+  date: "24/10/2023"
   
   page-footer:
     left: |
-      Nonlinear mixed-effects modelling with nlmixr2 was written by Justin Wilkins, 
-      Matthew Fidler, William Denney, John Harrold, Richard Hooijmaaijers, Rik 
+      Nonlinear mixed-effects modelling with nlmixr2 was written by Matthew Fidler, Justin Wilkins, 
+      William Denney, John Harrold, Richard Hooijmaaijers, Rik 
       Schoemaker, Mirjam Trame, Yuan Xiong and Huijuan Xu.
     right: |
       This book was built with <a href="https://quarto.org/">Quarto</a>.
@@ -21,9 +21,41 @@ book:
   
   chapters:
     - index.qmd
-    - intro.qmd
-    - history.qmd
-    - getting_started_with_rxode2.qmd
+    - part: "Introduction"
+      chapters: 
+        - 01_intro.qmd
+        - 02_prerequisites.qmd
+        - 03_history.qmd
+        - 04_intro_to_nlme.qmd
+    - part: Simulations with `rxode2`
+      chapters: 
+        - 05_getting_started.qmd
+        - 06_events.qmd
+        - 07_single_subjects.qmd
+        - 08_populations.qmd
+        - 09_more_complex_examples.qmd
+    - part: "Modeling with `nlmixr2`"
+      chapters: 
+        - 10_parameter_estimation_and_model_fitting.qmd
+        - 11_diagnostics_and_evaluation.qmd
+        - 12_handling_covariate_effects.qmd
+        - 13_model_selection_and_comparison.qmd
+        - 14_case_studies_and_practical_applications.qmd
+        - 15_tracking_work_with_shinymixr.qmd
+    - part: "Advanced topics"
+      chapters: 
+        - 16_inside_mixrverse.qmd
+        - 17_extending_mixrverse.qmd
+    - part: "The mixrverse"
+      chapters: 
+        - 18_qualifying_mixrverse.qmd
+        - 19_babelmixr.qmd
+        - 20_mixrverse.qmd
+    - part: "The future"
+      chapters: 
+        - 21_future_directions.qmd
+        - 22_final_thoughts.qmd
+    - function_reference.qmd
     - references.qmd
 
 bibliography: references.bib
@@ -31,7 +63,7 @@ csl: vancouver.csl
 
 format:
   html:
-    theme: cosmo
+    theme: lumen
   pdf:
     documentclass: scrreprt
 
