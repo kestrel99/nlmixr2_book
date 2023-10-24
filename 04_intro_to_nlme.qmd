@@ -1,4 +1,4 @@
-# A brief introduction to nonlinear mixed-effects modeling {#nlme}
+# A brief introduction to nonlinear mixed-effects modeling {#sec-nlme}
 
 This introductory chapter serves as a brief overview of mixed-effects models as they're used in pharma. It is by no means complete or exhaustive. If you'd like to learn more, we direct you to the seminal work on this topic, Pinheiro and Bates [@Pinheiro2000], as well as the comprehensive summary of the topic by Ezzet and Pinheiro [@ezzet_linear_2007].
 
@@ -84,7 +84,7 @@ But it's pharmacology we're here for, isn't it! Let's have a look at a single-do
 
 $$
 C(t) = \frac{F \cdot Dose \cdot k_a}{V(k_a - k)}[e^{-kt}-e^{-k_at}]
-$$ 
+$$
 
 Here, $C(t)$ is drug concentration in the central compartment at time $t$, which is a function of bioavailability $F$, drug dose $Dose$, absorption rate $k_a$, central volume of distribution $V$ and elimination rate $k$. In this system, we could imagine having two major sources of error to consider: random unexplained error, which could derive from errors in assays, measurement times, and so on, and between-subject error, which relate to differences in model parameters ($k_a$, $V$, $k$, $F$) between subjects (which might derive from differences in body size, body composition, enzyme expression and any number of other factors).
 
@@ -92,14 +92,14 @@ We can express $C(t)$ formally as follows:
 
 $$
 C_{ij}(t) = f(\theta_i, Dose_j, t)[1+\epsilon_{ij}(t)]
-$$ 
+$$
 
 where $C_{ij}(t)$ is the measured concentration of drug in individual $i$ at dose $j$ at time $t$, $f(\theta_i, Dose_j, t)$ is its corresponding prediction, $\theta_i$ is the vector of model parameters for individual $i$ (i.e. $k_{a,i}$, $V_i$, $k_i$ and $F_i$), $Dose_j$ is dose $j$, and $\epsilon_{ij}(t)$ is residual variability, defined as being normally distributed with mean 0 and variance $\sigma^2$. In this example, it is proportional to concentration. The model parameters in this example are considered to be log-normally distributed with mean 0 and variance $\omega^2$, for example:
 
 $$
 V_i = V \cdot \text{exp}(\eta_{V,i})\\
 \eta_{V,i} \sim N(0, \omega_V)
-$$ 
+$$
 
 The functional form of $f$ can of course vary depending on the model being considered (in this case, still the oral one-compartmental PK model).
 
@@ -109,7 +109,7 @@ $$
 V_i = V \cdot \text{exp}(\eta_{V,i} + \kappa_{V,ij})\\
 \eta_{V,i} \sim N(0, \omega_V)\\
 \kappa_{V,ij} \sim N(0, \pi_V)
-$$ 
+$$
 
 Here we have added the independently-distributed random effect $\kappa_{V,ij}$, representing between-occasion variability in individual $i$ at measurement occasion $j$, assumed normally distributed with mean 0 and variance $\pi^2$.
 
@@ -185,6 +185,31 @@ ggplot(Resex, aes(Epsilon)) +
 ```
 
 Every observation has an associated model prediction, and the difference between them is the residual, which in our model is proportional to the size of the observation. That proportion can lie anywhere within this distribution.
+
+Residual variability can be defined in a number of ways. The first, in which an additive relationship is assumed, is defined formally as:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} + \sigma_{i,j}\\
+\sigma \sim N(0, \epsilon)
+$$
+where $DV_{obs,i,j}$ is the osberved value of the dependent variable, $DV_{pred,i,j}$ is the predicted value of the dependent variable, and  $\sigma_{add,i,j}$ is additive residual error, defined as being normally distributed with mean 0 and variance $\epsilon_{add}^2$.
+
+Residual error can also be modelled to be proportional:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{i,j})\\
+\sigma \sim N(0, \epsilon)
+$$
+
+Or both:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j}) + \sigma_{add,i,j}\\
+\sigma_{prop} \sim N(0, \epsilon_{prop})\\
+\sigma_{add} \sim N(0, \epsilon_{add})
+$$
+
+
 
 The model parameters work much the same way. Let's look at volume of distribution (V) one more time. Here we have the distribution of $\eta_{V,i}$, assuming that $\omega^2_V$ is 0.25 (this is a variance, corresponding to a standard deviation of 0.5). Recall
 

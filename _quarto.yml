@@ -64,9 +64,9 @@ csl: vancouver.csl
 
 format:
   html:
-    theme: lumen
+    theme: litera 
   pdf:
     documentclass: scrreprt
 
-editor: visual
+editor: source
 

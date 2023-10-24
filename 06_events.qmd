@@ -1,4 +1,4 @@
-# Events in `rxode2` and `nlmixr2` {#events}
+# Events in `rxode2` and `nlmixr2` {#sec-events}
 
 ## Understanding events
 
@@ -9,7 +9,7 @@ Before we wade into writing models for `rxode2`, we should first understand even
 `rxode2` event tables contain a set of data items which allow fine-grained control of doses and observations over time. Here is a summary.
 
 | Data Item | Meaning                    | Notes                                                                                                                                              |
-|--------------|--------------|--------------------------------------------|
+|----------------|----------------|-----------------------------------------|
 | `id`      | Individual identifier      | Can be a integer, factor, character, or numeric.                                                                                                   |
 | `time`    | Individual time            | Numeric for each time.                                                                                                                             |
 | `amt`     | Dose amount                | Positive for doses, zero or `NA` for observations.                                                                                                 |

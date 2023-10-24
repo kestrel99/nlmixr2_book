@@ -4,7 +4,7 @@
 
 [Wikipedia](https://en.wikipedia.org/wiki/Pharmacometrics) defines pharmacometrics (PMx) as a field of study of the methodology and application of mathematical models for disease and pharmacological measurement. It applies mathematical models of biology, pharmacology, disease, and physiology to describe and quantify interactions between xenobiotics (drugs) and patients (human and non-human), including both beneficial and adverse effects. It is normally applied to combine data from drugs, diseases and clinical trials to aid efficient drug development, regulatory decisions and rational drug treatment in patients.
 
-Pharmacometrics rolls up modeling and simulation for pharmacokinetics, pharmacodynamics, and #DiseaseProgression, with a focus on populations and variability. A major focus is to understand variability in drug response, which can be predictable (e.g. due to differences in body weight or kidney function) or unpredictable (differences between subjects seem random, but likely reflect a lack of knowledge or data).
+Pharmacometrics rolls up modeling and simulation for pharmacokinetics, pharmacodynamics, and disease progression, with a focus on populations and variability. A major focus is to understand variability in drug response, which can be predictable (e.g. due to differences in body weight or kidney function) or unpredictable (differences between subjects seem random, but likely reflect a lack of knowledge or data).
 
 Quantitative systems pharmacology (QSP) is also considered to be a part of the PMx ecosystem, but applies a more theoretical and less data-driven approach to building models. QSP models are often much more complex than PK/PD models, with less of a populations focus.
 
