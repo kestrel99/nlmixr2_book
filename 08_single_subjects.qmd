@@ -1,0 +1,330 @@
+# Simulating single subjects {#rxode2}
+
+
+
+
+
+## Compartment numbers
+
+rxode2 automatically assigns compartment numbers when parsing. For illustrative purposes, let's look at something a bit more compex than we have so far: a PBPK model for mavoglurant published by Wendling and colleagues [@Wendling2016].
+
+```{r}
+library(rxode2)
+library(tidyverse)
+
+pbpk <- function() {
+  model({
+    KbBR = exp(lKbBR)
+    KbMU = exp(lKbMU)
+    KbAD = exp(lKbAD)
+    CLint= exp(lCLint + eta.LClint)
+    KbBO = exp(lKbBO)
+    KbRB = exp(lKbRB)
+
+    ## Regional blood flows
+    # Cardiac output (L/h) from White et al (1968)
+    CO  = (187.00*WT^0.81)*60/1000 
+    QHT = 4.0 *CO/100
+    QBR = 12.0*CO/100
+    QMU = 17.0*CO/100
+    QAD = 5.0 *CO/100
+    QSK = 5.0 *CO/100
+    QSP = 3.0 *CO/100
+    QPA = 1.0 *CO/100
+    QLI = 25.5*CO/100
+    QST = 1.0 *CO/100
+    QGU = 14.0*CO/100
+    # Hepatic artery blood flow
+    QHA = QLI - (QSP + QPA + QST + QGU) 
+    QBO = 5.0 *CO/100
+    QKI = 19.0*CO/100
+    QRB = CO - (QHT + QBR + QMU + QAD + QSK + QLI + QBO + QKI)
+    QLU = QHT + QBR + QMU + QAD + QSK + QLI + QBO + QKI + QRB
+
+    ## Organs' volumes = organs' weights / organs' density
+    VLU = (0.76 *WT/100)/1.051
+    VHT = (0.47 *WT/100)/1.030
+    VBR = (2.00 *WT/100)/1.036
+    VMU = (40.00*WT/100)/1.041
+    VAD = (21.42*WT/100)/0.916
+    VSK = (3.71 *WT/100)/1.116
+    VSP = (0.26 *WT/100)/1.054
+    VPA = (0.14 *WT/100)/1.045
+    VLI = (2.57 *WT/100)/1.040
+    VST = (0.21 *WT/100)/1.050
+    VGU = (1.44 *WT/100)/1.043
+    VBO = (14.29*WT/100)/1.990
+    VKI = (0.44 *WT/100)/1.050
+    VAB = (2.81 *WT/100)/1.040
+    VVB = (5.62 *WT/100)/1.040
+    VRB = (3.86 *WT/100)/1.040
+
+    ## Fixed parameters
+    BP = 0.61      # Blood:plasma partition coefficient
+    fup = 0.028    # Fraction unbound in plasma
+    fub = fup/BP   # Fraction unbound in blood
+
+    KbLU = exp(0.8334)
+    KbHT = exp(1.1205)
+    KbSK = exp(-.5238)
+    KbSP = exp(0.3224)
+    KbPA = exp(0.3224)
+    KbLI = exp(1.7604)
+    KbST = exp(0.3224)
+    KbGU = exp(1.2026)
+    KbKI = exp(1.3171)
+
+
+    ##-----------------------------------------
+    S15 = VVB*BP/1000
+    C15 = Venous_Blood/S15
+
+    ##-----------------------------------------
+    d/dt(Lungs) = QLU*(Venous_Blood/VVB - Lungs/KbLU/VLU)
+    d/dt(Heart) = QHT*(Arterial_Blood/VAB - Heart/KbHT/VHT)
+    d/dt(Brain) = QBR*(Arterial_Blood/VAB - Brain/KbBR/VBR)
+    d/dt(Muscles) = QMU*(Arterial_Blood/VAB - Muscles/KbMU/VMU)
+    d/dt(Adipose) = QAD*(Arterial_Blood/VAB - Adipose/KbAD/VAD)
+    d/dt(Skin) = QSK*(Arterial_Blood/VAB - Skin/KbSK/VSK)
+    d/dt(Spleen) = QSP*(Arterial_Blood/VAB - Spleen/KbSP/VSP)
+    d/dt(Pancreas) = QPA*(Arterial_Blood/VAB - Pancreas/KbPA/VPA)
+    d/dt(Liver) = QHA*Arterial_Blood/VAB + QSP*Spleen/KbSP/VSP +
+      QPA*Pancreas/KbPA/VPA + QST*Stomach/KbST/VST +
+      QGU*Gut/KbGU/VGU - CLint*fub*Liver/KbLI/VLI - QLI*Liver/KbLI/VLI
+    d/dt(Stomach) = QST*(Arterial_Blood/VAB - Stomach/KbST/VST)
+    d/dt(Gut) = QGU*(Arterial_Blood/VAB - Gut/KbGU/VGU)
+    d/dt(Bones) = QBO*(Arterial_Blood/VAB - Bones/KbBO/VBO)
+    d/dt(Kidneys) = QKI*(Arterial_Blood/VAB - Kidneys/KbKI/VKI)
+    d/dt(Arterial_Blood) = QLU*(Lungs/KbLU/VLU - Arterial_Blood/VAB)
+    d/dt(Venous_Blood) = QHT*Heart/KbHT/VHT + QBR*Brain/KbBR/VBR +
+      QMU*Muscles/KbMU/VMU + QAD*Adipose/KbAD/VAD + QSK*Skin/KbSK/VSK +
+      QLI*Liver/KbLI/VLI + QBO*Bones/KbBO/VBO + QKI*Kidneys/KbKI/VKI +
+      QRB*Rest_of_Body/KbRB/VRB - QLU*Venous_Blood/VVB
+    d/dt(Rest_of_Body) = QRB*(Arterial_Blood/VAB - Rest_of_Body/KbRB/VRB)
+  })
+}
+```
+
+This is quite a meaty model, with 16 compartments linked by ODEs.
+
+![](Wendling2016.jpg)
+
+### How `rxode2` assigns compartment numbers
+
+```{r}
+pbpk <- pbpk()
+print(pbpk)
+```
+
+Here, `Venous_Blood` is assigned to compartment 15. Keeping track of compartment numbers in large models like this can be inconvenient and challenging, and more importantly, can lead to mistakes. While it is easy, and probably clearer, to specify the compartments by name rather than number, other pharmacometric software in common use only supports compartment numbers. Having a way to number compartments easily can therefore be handy when moving between different tools.
+
+### Pre-declaring the compartments
+
+Pre-assigning compartment numbers can be helpful in this situation.
+
+To add the compartments to the model in the order desired, we can pre-declare them with `cmt`. For example, specifying `Venous_Blood` and `Skin` as the first and second compartments, respectively, is pretty straightforward:
+
+```{r}
+pbpk2 <- function() {
+  model({
+    
+    cmt(Venous_Blood)  ## Now this is the first compartment, ie cmt=1
+    cmt(Skin)          ## Now this is the second compartment, ie cmt=2
+    
+    KbBR = exp(lKbBR)
+    KbMU = exp(lKbMU)
+    KbAD = exp(lKbAD)
+    CLint= exp(lCLint + eta.LClint)
+    KbBO = exp(lKbBO)
+    KbRB = exp(lKbRB)
+
+    ## Regional blood flows
+    # Cardiac output (L/h) from White et al (1968)m
+    CO  = (187.00*WT^0.81)*60/1000;
+    QHT = 4.0 *CO/100;
+    QBR = 12.0*CO/100;
+    QMU = 17.0*CO/100;
+    QAD = 5.0 *CO/100;
+    QSK = 5.0 *CO/100;
+    QSP = 3.0 *CO/100;
+    QPA = 1.0 *CO/100;
+    QLI = 25.5*CO/100;
+    QST = 1.0 *CO/100;
+    QGU = 14.0*CO/100;
+    QHA = QLI - (QSP + QPA + QST + QGU); # Hepatic artery blood flow
+    QBO = 5.0 *CO/100;
+    QKI = 19.0*CO/100;
+    QRB = CO - (QHT + QBR + QMU + QAD + QSK + QLI + QBO + QKI);
+    QLU = QHT + QBR + QMU + QAD + QSK + QLI + QBO + QKI + QRB;
+
+    ## Organs' volumes = organs' weights / organs' density
+    VLU = (0.76 *WT/100)/1.051;
+    VHT = (0.47 *WT/100)/1.030;
+    VBR = (2.00 *WT/100)/1.036;
+    VMU = (40.00*WT/100)/1.041;
+    VAD = (21.42*WT/100)/0.916;
+    VSK = (3.71 *WT/100)/1.116;
+    VSP = (0.26 *WT/100)/1.054;
+    VPA = (0.14 *WT/100)/1.045;
+    VLI = (2.57 *WT/100)/1.040;
+    VST = (0.21 *WT/100)/1.050;
+    VGU = (1.44 *WT/100)/1.043;
+    VBO = (14.29*WT/100)/1.990;
+    VKI = (0.44 *WT/100)/1.050;
+    VAB = (2.81 *WT/100)/1.040;
+    VVB = (5.62 *WT/100)/1.040;
+    VRB = (3.86 *WT/100)/1.040;
+
+    ## Fixed parameters
+    BP = 0.61;      # Blood:plasma partition coefficient
+    fup = 0.028;    # Fraction unbound in plasma
+    fub = fup/BP;   # Fraction unbound in blood
+
+    KbLU = exp(0.8334);
+    KbHT = exp(1.1205);
+    KbSK = exp(-.5238);
+    KbSP = exp(0.3224);
+    KbPA = exp(0.3224);
+    KbLI = exp(1.7604);
+    KbST = exp(0.3224);
+    KbGU = exp(1.2026);
+    KbKI = exp(1.3171);
+
+
+    ##-----------------------------------------
+    S15 = VVB*BP/1000;
+    C15 = Venous_Blood/S15
+
+    ##-----------------------------------------
+    d/dt(Lungs) = QLU*(Venous_Blood/VVB - Lungs/KbLU/VLU);
+    d/dt(Heart) = QHT*(Arterial_Blood/VAB - Heart/KbHT/VHT);
+    d/dt(Brain) = QBR*(Arterial_Blood/VAB - Brain/KbBR/VBR);
+    d/dt(Muscles) = QMU*(Arterial_Blood/VAB - Muscles/KbMU/VMU);
+    d/dt(Adipose) = QAD*(Arterial_Blood/VAB - Adipose/KbAD/VAD);
+    d/dt(Skin) = QSK*(Arterial_Blood/VAB - Skin/KbSK/VSK);
+    d/dt(Spleen) = QSP*(Arterial_Blood/VAB - Spleen/KbSP/VSP);
+    d/dt(Pancreas) = QPA*(Arterial_Blood/VAB - Pancreas/KbPA/VPA);
+    d/dt(Liver) = QHA*Arterial_Blood/VAB + QSP*Spleen/KbSP/VSP +
+      QPA*Pancreas/KbPA/VPA + QST*Stomach/KbST/VST + QGU*Gut/KbGU/VGU -
+      CLint*fub*Liver/KbLI/VLI - QLI*Liver/KbLI/VLI;
+      d/dt(Stomach) = QST*(Arterial_Blood/VAB - Stomach/KbST/VST);
+      d/dt(Gut) = QGU*(Arterial_Blood/VAB - Gut/KbGU/VGU);
+      d/dt(Bones) = QBO*(Arterial_Blood/VAB - Bones/KbBO/VBO);
+      d/dt(Kidneys) = QKI*(Arterial_Blood/VAB - Kidneys/KbKI/VKI);
+      d/dt(Arterial_Blood) = QLU*(Lungs/KbLU/VLU - Arterial_Blood/VAB);
+      d/dt(Venous_Blood) = QHT*Heart/KbHT/VHT + QBR*Brain/KbBR/VBR +
+        QMU*Muscles/KbMU/VMU + QAD*Adipose/KbAD/VAD + QSK*Skin/KbSK/VSK +
+        QLI*Liver/KbLI/VLI + QBO*Bones/KbBO/VBO + QKI*Kidneys/KbKI/VKI +
+        QRB*Rest_of_Body/KbRB/VRB - QLU*Venous_Blood/VVB;
+        d/dt(Rest_of_Body) = QRB*(Arterial_Blood/VAB - Rest_of_Body/KbRB/VRB);
+  })
+}
+```
+
+```{r}
+pbpk2 <- pbpk2()
+pbpk2
+```
+
+Now `Venous_Blood` and `Skin` are where we want them.
+
+### Appending compartments
+
+You can also append "compartments" to the model. Because of the ODE solving internals, you cannot add fake compartments to the model until after all the differential equations are defined.
+
+For example this is legal:
+
+```{r}
+mod2 <- function(){
+  model({
+    C2 = center/V
+    d / dt(depot) = -KA * depot
+    d/dt(center) = KA * depot - CL*C2
+    cmt(eff)
+  })
+}
+
+mod2 <- mod2()
+print(mod2)
+```
+
+You can see this more clearly by querying the `simulationModel` property:
+
+```{r}
+mod2$simulationModel
+```
+
+Defining "extra" compartments before the differential equations is not supported. The model below will throw an error if executed.
+
+```         
+mod2 <- rxode2({
+    cmt(eff)
+    C2 = center/V;
+    d / dt(depot) = -KA * depot
+    d/dt(center) = KA * depot - CL*C2
+})
+```
+
+## Transit compartments
+
+Transit compartments provide a useful way to better approximate absorption lag times, without the numerical problems and stiffness associated with the conventional way of modeling these [@Savic2007; @Wilkins2008]. `rxode2` has them built in.
+
+The transit compartment function (`transit`) can be used to specify the model without having to write it out in full (although you could do that too, if you wanted to). `transit()` takes parameters corresponding to the number of transit compartments (`n` in the code below), the mean transit time (`mtt`), and bioavailability (`bio`, which is optional).
+
+```{r}
+mod <- function() {
+  ini({
+    ## Table 3 from Savic 2007
+    cl  <- 17.2 # (L/hr)
+    vc  <- 45.1 # L
+    ka  <- 0.38 # 1/hr
+    mtt <- 0.37 # hr
+    bio <- 1
+    n   <- 20.1
+  })
+  model({
+    k           <- cl/vc
+    ktr         <- (n+1)/mtt
+    d/dt(depot) <- transit(n,mtt,bio)-ka*depot
+    # or alternately -
+    # d/dt(depot) <- exp(log(bio*podo(depot))+log(ktr)+n*log(ktr*tad(depot))-
+    #                    ktr*tad(depot)-lgammafn(n+1))-ka*depot
+    d/dt(cen)   <- ka*depot-k*cen
+  })
+}
+
+et <- et(0, 7, length.out=200) %>%
+  et(amt=20, evid=7)
+
+transit <- rxSolve(mod, et)
+
+ggplot(transit, aes(time, cen)) +
+  geom_line(col="red") +
+  xlab("Time") + ylab("Concentration") +
+  theme_light()
+
+```
+
+A couple of things to keep in mind when using this approach:
+
+-   This approach implicitly assumes that the absorption through the transit compartment is completed before the next dose is given If this isn't the case, some additional code is needed to correct for this [@Wilkins2008].
+
+-   Different dose types (bolus or infusion) to the `depot` compartment affect the time after dose calculation (`tad`) which is used in the transit compartment code. Direct doses into compartments are therefore not currently supported. The most stable way around this is to use `tad(cmt)` and `podo(cmt)` - this way, doses to other compartments do not affect the transit compartment machinery.
+
+-   Internally, the `transit` syntax uses either the currently defined compartment, `d/dt(cmt)=transit(...)`, or `cmt`. If the transit compartment is used outside of a `d/dt()` (not recommended), the `cmt` that is used is the last `d/dt(cmt)` defined it the model. This also means compartments do not affect one another (ie a oral, transit compartment drug dosed immediately with an IV infusion)
+
+## Covariates
+
+## Multiple subjects
+
+## Working with `rxode2` output
+
+## Piping
+
+## Special cases
+
+### Jacobian solving
+
+### `rxode2` models in `shiny`
+
+### Precompiled `rxode2` models in other R packages

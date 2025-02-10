@@ -1,0 +1,1112 @@
+# A brief introduction to pharmacokinetics {#sec-poppk}
+
+It is not possible to give a comprehensive overview of pharmacokinetics (PK) and pharmacodynamics (PD) in a single chapter. Entire textbooks have been written on the subject, and it is a field that is constantly evolving. However, we present here a brief overview of the key concepts and how they relate to one another, with a view to using them as a springboard for `rxode2` and `nlmixr2`. For the interested reader, a much deeper exploration of these topics may be found in seminal works such as Rowland and Tozer [@derendorf_rowland_2019] and Gabrielsson and Weiner [@gabrielsson_pharmacokinetic_2007], upon which this short summary is heavily based.
+
+_When the rest of the book is done we can add links to the various sections throughout this chapter._
+
+## Pharmacokinetics
+
+Pharmacokinetics, or PK as it is usally referrred to, is the study of the time course of drug concentrations in different body spaces, such as plasma, blood, urine, cerebrospinal fluid, and tissues, and how the effect the time course of drug action, such as the onset, intensity and duration of action [@gabrielsson_pharmacokinetic_2007]. [@fig-pk1] provides an overview of the key processes involved in PK: absorption, distribution, metabolism and excretion. It's very important to understand these concepts clearly before we move into trying to model them. [@fig-pk2] illustrates the path a drug might follow from administration to elimination.
+
+![PK in a nutshell: absorption, distribution, metabolism and excretion.](fig1.png){fig-alt="PK in a nutshell: absorption, distribution, metabolism and excretion." width=80% #fig-pk1}
+
+![Schematic view of the body, illustrating the pathway taken by a drug from administration to elimination.](fig2.png){fig-alt="Schematic view of the body, illustrating the pathway taken by a drug from administration to elimination." width=50% #fig-pk2}
+
+### Site of administration
+
+Sites of drug administration are typically classified as intravascular (in which the drug is administered directly into the circulation, either intravenously or intra-arterially), or extravascular (in which the drug is administered outside the circulation, including oral, subcutaneous, sublingual, buccal, intramuscular, dermal, pulmonary, and rectal routes). Drugs administered extravascularly must be absorbed into the circulation before they can be distributed to their site of action. 
+
+### Absorption
+
+Rowland and Tozer define _absorption_ as the process by which unchanged drug moves from the site of administration to the site of measurement in the body [@derendorf_rowland_2019]. Absorption can be a surprisingly complex process that depends on the physicochemical properties of the drug, the route of administration, and the physiology of the recipient. The rate and extent of absorption can be influenced by a range of factors, including the solubility of the drug, the pH of the environment, the presence of food, the presence of other drugs, and the integrity of the gastrointestinal tract. In the case of oral administration, for example, drug travels from the gastrointestinal lumen through the intestinal wall and into the portal vein, where it is transported to the liver before entering the circulation, where it can be measured. In some circumstances, a fraction of the drug is lost as it is metabolized in the liver before it reaches the systemic circulation, a phenomenon known as the _first-pass effect_.
+
+### Disposition
+
+After absorption, the drug is distributed throughout the body, delivered simultaneously to all tissues by the arterial blood. _Disposition_ refers to both distribution and elimination, and is a blanket term covering all processes occurring subsequent to absorption. 
+
+_Distribution_ is defined as the reversible transfer of drug to and from the site of measurement, which is usually blood or plasma. A simple example is the movement of drug between blood and muscle. A less simple example is enterohepatic cycling, in which drug is excreted into the bile by the liver, stored in the gall bladder, released with the bile into the small intestine and reabsorbed into the circulation. Distribution depends heavily on a range of factors, including organ blood perfusion, organ size, permeability of tissue membranes, blood and tissue binding, and the physicochemical properties of the drug. 
+
+Distribution primarily determines the early rapid decline in plasma concentration subsequent to dose administration. Eventually, however, equilibrium is reached between the concentration of drug in the plasma and the concentration in the tissues, and the body can be thought of as a single container, or _compartment_. Since decline in observed concentrations is due only to elimination once this state is reached, this phase is often termed the _elimination phase_. 
+
+_Elimination_ is defined as the irreversible loss of drug from the site of measurement, and occurs by two processes: excretion and metabolism. Elimination takes place mostly via the kidneys and the liver, with smaller contributions from the lungs, skin, and other routes. Metabolism takes place primarily in the liver, while excretion of unmetabolized drug occurs primarily via the kidneys.
+
+### Routes of administration, and some important nomenclature
+
+#### Intravascular dosing
+
+[@fig-iv-pk-plot] provides an illustration of concentration over time for an intravenously-administered drug with first-order elimination. The concentration of drug in the plasma decreases exponentially over time, with the rate of decrease proportional to the concentration of drug in the plasma. This is known as _first-order elimination_, and is the most common type of elimination process observed in PK.
+
+```{r}
+#| label: fig-iv-pk-plot
+#| fig-cap: "Concentration over time after an intravascular dose."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+options(scipen = 999)
+
+## IV PK curve
+
+mod <- rxode2({
+    ipre <- 10 * exp(-ke * t);
+})
+
+et   <- et(seq(0, 24, length.out=50))
+cmt1 <- rxSolve(mod, et, params = c(ke=0.5))
+
+mod_n <- ggplot(data = cmt1, aes(x = time, y = ipre)) +
+    geom_line() +
+    labs(title="Normal scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod_l <- ggplot(data = cmt1, aes(x = time, y = ipre)) +
+    geom_line() +
+  scale_y_log10() +
+  annotation_logticks(side="l") +
+    labs(title="Logarithmic scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod_n + mod_l + plot_layout(ncol = 2)
+
+```
+
+The elimination phase is described by two mathematical parameters: the _elimination half-life_ ($t_{1/2}$) and the _apparent volume of distribution_ (Vd). 
+
+- **Elimination half-life** ($t_{1/2}$): the time required for the plasma concentration of drug (and the amount of drug in the body) to decrease by half, and is a useful measure of the rate of elimination. The elimination half-life is related to the _elimination rate constant_, $k$, by the equation $t_{1/2} = \frac{ln(2)}{k}$ (assuming a one-compartment system with first-order elimination - we will get to this later). 
+
+- **Volume of distribution** (Vd): the hypothetical volume of fluid into which a drug would have to be dissolved to produce the observed concentration. It is a function of the dose and the extent of distribution of a drug into tissues. Calculation of Vd requires that concentration be at equilibrium between the plasma and the tissues. 
+
+- **Clearance** (CL): the volume of plasma from which the drug is completely removed per unit time. It is a measure of the efficiency of elimination of a drug from the body, and is calculated as the product of the elimination rate constant $k$ and the apparent volume of distribution $Vd$: $CL = k \cdot Vd$.
+
+- **Area under the concentration-time curve** (AUC): the total amount of drug that has entered the systemic circulation over time over a given period, a measure of the extent of exposure to the drug. It is calculated by integrating the concentration-time curve over time. It may also be calculated as $$AUC = \frac{Dose}{CL}$$ where $Dose$ is the amount of drug administered.
+
+#### Extravascular dosing
+
+The key difference between intravascular and extravascular dosing in PK is the absorption process that must take place before the drug reaches the systemic circulation. [@fig-oral-pk-plot] provides an illustration of concentration over time for an orally-administered drug with first-order absorption and elimination.
+
+```{r}
+#| label: fig-oral-pk-plot
+#| fig-cap: "Concentration over time after an extravascular dose."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+options(scipen = 999)
+
+## IV PK curve
+
+mod1 <- function() {
+  ini({
+    # central compartment
+    KA   = 1  # /h
+    CL   = 20   # L/h
+    V2   = 40   # L
+  })
+  model({
+    C2          <- centr/V2   # concentration in the central compartment
+    
+    d/dt(depot) <- -KA*depot                         # depot compartment
+    d/dt(centr) <-  KA*depot - CL*C2 
+  })
+}
+
+et   <- et(amt=400, cmt=1, time=0) %>%
+  add.sampling(seq(0, 24, length.out=500))
+
+
+cmt1o <- rxSolve(mod1, et)
+
+mod_no <- ggplot(data = cmt1o, aes(x = time, y = C2)) +
+    geom_line() +
+    labs(title="Normal scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod_lo <- ggplot(data = cmt1o, aes(x = time, y = C2)) +
+    geom_line() +
+  scale_y_log10() +
+  annotation_logticks(side="l") +
+    labs(title="Logarithmic scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod_no + mod_lo + plot_layout(ncol = 2)
+
+```
+
+Although often very complex, absorption processes can commonly be approximated as a first-order process.
+
+Key concepts here include -
+
+- The **absorption rate constant** ($ka$), which governs the absorption process. In some circumstances, zero-order absorption processes are observed, in which the rate of absorption is constant over time.
+
+- **Bioavailability**, which is a measure of the fraction of the administered dose that reaches the systemic circulation, the remainder being lost to elimination processes taking place during absorption. Bioavailability is calculated as the ratio of the AUC after extravascular dosing to the AUC after intravascular dosing: $$F = \frac{AUC_{extravascular}}{AUC_{intravascular}}$$
+
+### PK metrics
+
+In addition to AUC, $t_{1/2}$, $Vd$, and $CL$, a number of other metrics are often used to describe the PK of a drug, including:
+
+- **Peak concentration** ($C_{max}$)
+- **Time to peak concentration** ($T_{max}$)
+- **Minimum concentration** ($C_{min}$ or $C_{trough}$, typically evaluated immediately before the next dose)
+- **Average concentration** ($C_{avg}$, calculated as the AUC divided by the dosing interval)
+
+### Noncompartmental analysis
+
+Noncompartmental analysis (NCA) is not a topic we shall be spending much time on, but since we'll be illustrating how we can use NCA for automatically generating initial estimates for population PK modeling later on, let's take a quick look.
+
+NCA is applied to estimate PK metrics and parameters directly from observed concentration-time measurements. The NCA approach is relatively versatile in that no specific model is assumed, and it is usually sufficiently accurate to for many purposes. Total drug exposure can be estimated by through AUC, using the trapezoidal rule (numerical integration). The number of time points available in order to perform a successful NCA analysis should be enough to cover the absorption, distribution and elimination phase to accurately characterize the drug, and the timing of samples must be adequate to ensure reasonably accurate estimation of AUC. Besides AUC, NCA can be applied to provide estimates of a range of PK metrics and parameters, including $C_{max}$, $T_{max}$, $C_{min}$, $CL$ and $Vd$.
+
+### Compartmental analysis
+
+Compartmental analysis is a more sophisticated approach to PK modeling, in which the body is conceptualized as a series of interconnected compartments, each representing a different tissue or organ, or set of tissues and organs. The simplest compartmental model is the one-compartment model, in which the body is treated as a single compartment in which drug is distributed and eliminated. The one-compartment model is the most commonly used model in PK, and is often sufficient to describe the PK of many drugs. More complex models, such as the two-compartment model, the three-compartment model, and the physiologically-based pharmacokinetic (PBPK) model are used when the one-compartment model is insufficient to describe the PK of a drug.
+
+Ordinary differential equations (ODEs) are used to define compartmental models. 
+
+#### One-compartment model
+
+The one-compartment model is the simplest compartmental model, and is often sufficient to describe the PK of many drugs. The one-compartment model is illustrated in [@fig-one-compartment-model].
+
+![The one-compartment model.](1cpt.png){fig-alt="The one-compartment model." width=80% #fig-one-compartment-model}
+
+Here, the body is considered to be a single large bucket in which drug is dissolved. Drug enters as a single bolus or infusion (in the intravascular case) or from the depot compartment (in the extravascular case, via absorption rate constant $ka$) and is thereafter eliminated according to elimination rate constant $k$. The movement of drug is governed by ODEs.
+
+For the intravascular case,
+
+$$
+\frac{dA_{Central}}{dt} = -k \cdot A_{Central}
+$$
+
+where $A_{Depot}$ is the amount of drug in the central compartment. 
+
+For the extravascular case,
+
+$$
+\frac{dA_{Depot}}{dt} = -ka \cdot A_{Depot}
+$$
+$$
+\frac{dA_{Central}}{dt} = ka \cdot A_{Depot} - k \cdot A_{Central}
+$$
+
+where $A_{Depot}$ is the amount of drug in the depot compartment, and $A_{Central}$ is the amount of drug in the central compartment.
+
+Plotting concentration against time on the semilogarithmic scale will yield a straight line, with the slope of the line equal to $k$ ([@fig-oral-pk-plot-semilog]).
+
+```{r}
+#| label: fig-oral-pk-plot-semilog
+#| fig-cap: "Concentration plotted against time for the one-compartment model."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+line <- tibble(
+  time = seq(0, 24, by=0.1),
+  C2 = 20* exp(-0.5 * seq(0, 24, by=0.1))
+)
+
+mod_l_k <- ggplot(data = cmt1o, aes(x = time, y = C2)) +
+    geom_line(col="lightgrey",size=2) +
+  geom_line(data=line, aes(x=time,y=C2), col="red", linetype=2) +
+  scale_y_log10() +
+  annotation_logticks(side="l") +
+    labs(title="Logarithmic scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()  + 
+  annotate("text", x = 12.8, y = 0.05, label = "Slope = k", size = 5, angle=330, col="red")
+
+mod_l_k
+
+```
+
+#### Two-compartment model
+
+The two-compartment model is a more complex model that is used when the one-compartment model is insufficient to describe the PK of a drug. The two-compartment model is illustrated in [@fig-two-compartment-model].
+
+![The two-compartment model.](2cpt.png){fig-alt="The two-compartment model." width=80% #fig-two-compartment-model}
+
+Here, the body is considered to be divided into two compartments: the central compartment, which represents the plasma and has volume of distribution V1, and the peripheral compartment, which represents the tissues and has volume of distribution V2. Drug enters the central compartment as a single bolus or infusion (in the intravascular case) or from the depot compartment (in the extravascular case, via absorption rate constant $ka$) and is thereafter distributed to the peripheral compartment. Drug is eliminated from the central compartment according to elimination rate constant $k$, and is transported between the peripheral compartment and the central compartment according to rate constants $k_{12}$ and $k_{21}$, which may be calculated from the _intercompartmental clearance_ (Q) as $Q/V1$ and $Q/V2$, respectively. It is worth noting that for the extravascular case, V1 and V2 may sometimes be called V2 and V3, respectively (since the depot compartment is considered to be the first compartment).
+
+The two-compartment model for an orally-dosed drug is defined by the following ODEs:
+
+$$
+\frac{dA_{Depot}}{dt} = -ka \cdot A_{Depot}
+$$
+$$
+\frac{dA_{Central}}{dt} = ka \cdot A_{Depot} - k \cdot A_{Central} - k_{12} \cdot A_{Central} + k_{21} \cdot A_{Peripheral} 
+$$
+
+$$
+\frac{dA_{Peripheral}}{dt} = k_{12} \cdot A_{Central} - k_{21} \cdot A_{Peripheral}
+$$
+
+where $A_{Depot}$ is the amount of drug in the depot compartment, $A_{Central}$ is the amount of drug in the central compartment, $A_{Peripheral1}$ is the amount of drug in the first peripheral compartment, $k_{12}$ is the rate constant governing the transfer of drug from the central to the first peripheral compartment, $k_{21}$ is the rate constant governing the transfer of drug from the first peripheral compartment to the central compartment, $A_{Peripheral2}$ is the amount of drug in the second peripheral compartment, $k_{13}$ is the rate constant governing the transfer of drug from the central to the second peripheral compartment, and $k_{31}$ is the rate constant governing the transfer of drug from the second peripheral compartment to the central compartment.
+
+Concentration versus time is plotted for an oral two-compartment model in [@fig-2cpt-plots]. Notice that concentration on the semilogarithmic plot no longer declines at a constant rate, as it did in the one-compartment model. Plotting the observed data thus often provides a straightforward way of choosing an initial number of compartments to explore.
+
+```{r}
+#| label: fig-2cpt-plots
+#| fig-cap: "Concentration over time in a two-compartment model."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+options(scipen = 999)
+
+## IV PK curve
+
+mod2 <- function() {
+  ini({
+    # central compartment
+    KA   = 1  # /h
+    CL   = 20   # L/h
+    V2   = 40   # L
+    V3   = 80   # L
+    Q = 2 # L/h
+  })
+  model({
+    C2          <- centr/V2   # concentration in the central compartment
+    k12 <- Q/V2
+    k21 <- Q/V3
+    
+    d/dt(depot) <- -KA*depot                         # depot compartment
+    d/dt(centr) <-  KA*depot - CL*C2 - k12*centr + k21*periph
+    d/dt(periph) <- k12*centr - k21*periph
+  })
+}
+
+et   <- et(amt=400, cmt=1, time=0) %>%
+  add.sampling(seq(0, 24, length.out=500))
+
+
+cmt2o <- rxSolve(mod2, et)
+
+mod2_no <- ggplot(data = cmt2o, aes(x = time, y = C2)) +
+    geom_line() +
+    labs(title="Normal scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod2_lo <- ggplot(data = cmt2o, aes(x = time, y = C2)) +
+    geom_line() +
+  scale_y_log10() +
+  annotation_logticks(side="l") +
+    labs(title="Logarithmic scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod2_no + mod2_lo + plot_layout(ncol = 2)
+
+```
+
+#### Three-compartment model
+
+The three-compartment model ([@fig-three-compartment-model]) is less commonly applied than the one- and two-compartment models, but can be used when less complex models are inadequate. 
+
+It is very seldom that more complex structural models are necessary to describe the PK of a drug, unless PBPK modeling is undertaken. The differences in concentration-time curves generated by two- and three-compartment models can often be subtle, and differentiating them from one another requires rich data.
+
+![The three-compartment model.](3cpt.png){fig-alt="The three-compartment model." width=80% #fig-three-compartment-model}
+
+The three-compartment model adds an additional volume of distribution for the second peripheral compartment (V3), and an additional intercompartmental clearance parameter governing the transfer of drug to and from the central compartment (Q2). For an orally-dosed drug, the system is defined by the following ODEs:
+
+$$
+\frac{dA_{Depot}}{dt} = -ka \cdot A_{Depot}
+$$
+
+$$
+\frac{dA_{Central}}{dt} = ka \cdot A_{Depot} - k \cdot A_{Central} - k_{12} \cdot A_{Central} + k_{21} \cdot A_{Peripheral1} - k_{13} \cdot A_{Central} + k_{31} \cdot A_{Peripheral2}
+$$
+
+$$
+\frac{dA_{Peripheral1}}{dt} = k_{12} \cdot A_{Central} - k_{21} \cdot A_{Peripheral1}
+$$
+
+$$
+\frac{dA_{Peripheral2}}{dt} = k_{13} \cdot A_{Central} - k_{31} \cdot A_{Peripheral2}
+$$
+
+where $A_{Depot}$ is the amount of drug in the depot compartment, $A_{Central}$ is the amount of drug in the central compartment, $A_{Peripheral1}$ is the amount of drug in the first peripheral compartment, $k_{12}$ is the rate constant governing the transfer of drug from the central to the first peripheral compartment (calculated as $Q1/V1$), $k_{21}$ is the rate constant governing the transfer of drug from the first peripheral compartment to the central compartment (calculated as $Q1/V2$), $A_{Peripheral2}$ is the amount of drug in the second peripheral compartment, $k_{13}$ is the rate constant governing the transfer of drug from the central to the second peripheral compartment (calculated as $Q2/V1$), and $k_{31}$ is the rate constant governing the transfer of drug from the second peripheral compartment to the central compartment (calculated as $Q2/V3$).
+
+
+```{r}
+#| label: fig-3cpt-plots
+#| fig-cap: "Concentration over time in a three-compartment model."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+options(scipen = 999)
+
+## IV PK curve
+
+mod3 <- function() {
+  ini({
+    # central compartment
+    KA   = 1  # /h
+    CL   = 20   # L/h
+    V2   = 30   # L
+    V3   = 25   # L
+    V4   = 200 # L
+    Q1 = 1 # L/h
+    Q2 = 0.25 # L/h
+  })
+  model({
+    C2          <- centr/V2   # concentration in the central compartment
+    k12 <- Q1/V2
+    k21 <- Q1/V3
+    k13 <- Q2/V2
+    k31 <- Q2/V4
+    
+    d/dt(depot) <- -KA*depot                         # depot compartment
+    d/dt(centr) <-  KA*depot - CL*C2 - k12*centr + k21*periph1 - k13*centr + k31*periph2
+    d/dt(periph1) <- k12*centr - k21*periph1
+    d/dt(periph2) <- k13*centr - k31*periph2
+  })
+}
+
+et   <- et(amt=400, cmt=1, time=0) %>%
+  add.sampling(seq(0, 24, length.out=500))
+
+
+cmt3o <- rxSolve(mod3, et)
+
+mod3_no <- ggplot(data = cmt3o, aes(x = time, y = C2)) +
+    geom_line() +
+    labs(title="Normal scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod3_lo <- ggplot(data = cmt3o, aes(x = time, y = C2)) +
+    geom_line() +
+  scale_y_log10() +
+  annotation_logticks(side="l") +
+    labs(title="Logarithmic scale",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+mod3_no + mod3_lo + plot_layout(ncol = 2)
+
+```
+
+#### Physiologically-based pharmacokinetic (PBPK) modeling
+
+PBPK models, by contrast to simpler empirical compartmental models, are informed by the anatomical, physiological and biochemical characteristics of the body. They are composed of compartments corresponding to organs or tissues, with connections corresponding to blood or lymph flows, or less commonly, diffusion processes. ODEs and their parameters represent blood flows, pulmonary ventilation rate, and organ volumes, using a priori information extracted from the scientific literature. PBPK models, although much more complex than other types of PK model, are particularly useful for describing and predicting inter-species and paediatric scaling, and extrapolation from one mode of administration to another.  [@fig-pbpk-model] is a schematic of a simple perfusion-limited PBPK model (permeability-limited drug uptake into the tissues is also possible, but is slightly more complex).
+
+![Example of a physiologically-based PK model.](pbpk.png){fig-alt="Example of a physiologically-based PK model." width=80% #fig-pbpk-model}
+
+The dynamic change in drug concentration in each tissue compartment is thus defined by:
+
+$$
+\frac{dC_T}{dt} = \frac{Q_{T}}{V_T} \cdot \left(C_{ven/art}-\frac{C_T}{k_{b,T}} \right)
+$$
+where $C_T$ is the concentration in the tissue, $Q_T$ is the blood flow to the tissue, $V_T$ is the volume of the tissue, $C_{ven/art}$ is the concentration in the venous (for the lung) or arterial blood (for all other tissues), and $k_{b,T}$ is the tissue-blood partition coefficient.
+
+Concentration in the arterial blood is defined by:
+
+$$
+\frac{dC_{art}}{dt} = \frac{Q_{lung}}{V_{art}} \cdot \left(\frac{C_{lung}}{k_{B,lung}} - C_{art} \right)
+$$
+
+where $Q_{lung}$ is the blood flow to the lung, $V_{art}$ is the volume distribution of the arterial blood, $C_{lung}$ is the concentration in the lung, and $k_{B,lung}$ is the lung-blood partition coefficient. Concentration in the venous blood is defined by:
+
+$$
+\frac{dC_{ven}}{dt} = \left(\sum{\frac{Q_{T}}{V_{ven}}} \cdot \frac{C_{T}}{k_{B,T}}\right) - \frac{Q_{lung}}{V_{ven}} \cdot C_{ven}
+$$
+where $V_{ven}$ is the volume of distribution of the venous blood. In this example, $\sum{\frac{Q_{T}}{V_{ven}}} \cdot \frac{C_{T}}{k_{B,T}}$ includes all tissues except the gut and the liver. 
+
+## Population PK
+
+Population PK modeling is an approach used to describe the PK of a drug in a population of individuals, rather than in a single individual. Population PK models are used to describe the variability in PK parameters between individuals, and to identify factors that influence the PK of a drug. Population PK models are often used to optimize dosing regimens, to predict the PK of a drug in a new population, and to identify factors that influence the PK of a drug. Models for populations will be the focus of this book.
+
+## Pharmacodynamics
+
+Pharmacodynamics, or PD as it is usually referred to, is the study of the time course of the biological effects of a drug, how these effects are related to the exposure of the drug, and associated mechanisms of drug action [@gabrielsson_pharmacokinetic_2007]. Responses can be graded (such as blood pressure or heart rate) or quantal (such as the occurrence of an adverse event).
+
+Some terms should be defined before we delve any deeper: we have based our summary on Gabrielsson and Weiner [@gabrielsson_pharmacokinetic_2007].
+
+- **Receptors** are macromolecules that interact with drugs to produce a biological response through signaling between and within cells. 
+- **Agonists** are ligands that bind to receptors and activate them, producing a biological response. Conventional agonists increase the proportion of activated receptors, thus increasing the biological response, whereas inverse agonists reduce it. 
+- **Antagonists** are ligands that act by blocking the effects of other compounds.
+- **Potency** describes the activity of a compound, usually in terms of the concentration or amount of a drug necessary to produce a given effect.
+- **EC~50~** is the concentration of a drug that produces 50% of the maximum effect, and is a measure of potency.
+- **IC~50~** is the concentration of a drug that reduces the effect of interest to 50% of its former value. It, too, is a measure of potency. 
+- **Efficacy** is the degree to which different agonists produce varying responses, even when the same proportion of receptors is occupied.
+
+### Law of Mass Action
+
+The idea of receptor occupancy - the proportion of receptors occupied by a drug - is based on the Law of Mass Action, which states that the rate of a chemical reaction is proportional to the product of the concentrations of the reactants. The Law of Mass Action can be applied to describe the relationship between drug concentration and the biological response.
+
+$$
+[Drug] + [Receptor] \rightleftharpoons [Drug-Receptor] \rightarrow E
+$$
+where $E$ is a biological effect. We can reformulate this as a differential equation:
+
+$$
+\frac{d[RC]}{dt} = k_{on} \cdot [R] \cdot [C] - k_{off} \cdot [RC]
+$$
+
+where $[RC]$ is the concentration of the drug-receptor complex in molar units, $[R]$ is the concentration of the receptor in molar units, $[C]$ is the concentration of the drug in molar units, $k_{on}$ is the association rate constant, and $k_{off}$ is the dissociation rate constant. At equlibrium, the rate of change of [RC] is zero, so we can rearrange as follows:
+
+$$
+\frac{[C] \cdot [R]}{[RC]} = \frac{k_{off}}{k_{on}} = K_d
+$$
+K~d~ is the equilibrium dissociation constant, and is a measure of the drug-receptor _affinity_. The lower the K~d~, the higher the affinity. 
+
+If we assume that the total number of receptors in the system is $[R_{tot}]$, and is equal to $[RC]$ + $[R]$, we can rearrange to get:
+
+$$
+\frac{[C] \cdot \left([R_{tot}] - {[RC]}\right)}{[RC]} = \frac{k_{off}}{k_{on}} = K_d
+$$
+Rearranging a bit further, we get:
+
+$$
+\frac{[RC]}{[R_{tot}]} = \frac{[C]}{[C] + K_d}
+$$
+
+Response can be thought of as being directly proportional to the fractional occupancy of receptors by drug, or put another way, to the concentration of the drug-receptor complex [@ariens1954]. This gives us the _intrinsic efficacy_ $\epsilon$, described by the following equation:
+
+$$
+\epsilon = \frac{[RC]}{E}
+$$
+
+The maximum possible response attributable to drug, $E_{max}$, occurs when all the receptors are occupied:
+
+$$
+E_{max} = \alpha \cdot [R_{tot}]
+$$
+where $\alpha$ is efficacy.
+
+Thus:
+
+$$
+\frac{E}{E_{max}} = \frac{[C]}{[C] + K_d}
+$$
+so
+
+$$
+E = \frac{E_{max} \cdot [C]}{[C] + K_d}
+$$
+
+This equation ought to be relatively familiar if you've ever encountered the _Hill equation_, which is a special case of this expression.
+
+We could go into further detail here, but we'll leave it at that for now. The interested reader is encouraged to consult Gabrielsson and Weiner [@gabrielsson_pharmacokinetic_2007] for a more detailed exploration of the topic.
+
+### Pharmacodynamic models
+
+_In vitro_ binding models are all very well, but what we are really interested in - for the purposes of this book, anyway - is models for _in vivo_ responses. For most purposes, we can assume we are at equilibrium or steady state. 
+
+#### Linear effect-concentration models
+
+These are pretty simple - in effect, straight lines. All we need to describe the relationship between drug concentration $C$ and effect $E$ is a linear equation:
+
+$$
+E = S \cdot C
+$$
+where $S$ is the slope of the line. This assumes an intercept of zero, which is almost never the case, so we would normally add an intercept:
+
+$$
+E = E_0 + S \cdot C
+$$
+where $E_0$ is the baseline value of the effect we are describing.
+
+
+```{r}
+#| label: fig-linear-pd
+#| fig-cap: "Linear concentration-effect model with a baseline effect."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(ggplot2)
+
+# Sample data with a baseline effect
+concentration <- c(0, 1, 2, 3, 4, 5)
+response <- c(5, 7, 9, 11, 13, 15) # Notice the baseline shift from 0 to 5
+data <- data.frame(concentration, response)
+
+# Fit a linear model with an intercept
+model <- lm(response ~ concentration, data = data) 
+
+# Add fitted line to the plot
+ggplot(data, aes(x = concentration, y = response)) +
+  geom_point() + 
+  geom_segment(x = 0, xend = 15, y = 5, yend=35) +
+  #geom_abline(intercept = coef(model)[1], slope = coef(model)[2]) + 
+  labs(x = "Concentration",
+       y = "Response") +
+  coord_cartesian(ylim=c(0, 15)) +
+  theme_light()
+```
+
+
+Biology, of course, almost never follows straight lines.
+
+#### Log-linear effect-concentration models
+
+Sometimes, the relationship between concentration and effect may not be linear. Natural log-transformation of the concentration can sometimes help:
+
+$$
+E = E_0 + S \cdot \ln(C)
+$$
+
+```{r}
+#| label: fig-loglinear-pd
+#| fig-cap: "Linear concentration-effect model with a baseline effect."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(ggplot2)
+
+# Sample data with a baseline effect
+concentration <- c(seq(0.01, 5, by=0.01))
+response <- c(20 + 3*(log(seq(0.01, 5, by=0.01)))) # Notice the baseline shift from 0 to 5
+data <- data.frame(concentration, response)
+
+# Fit a linear model with an intercept
+model <- lm(response ~ I(log(concentration)), data = data) 
+
+# Add fitted line to the plot
+p1 <- ggplot(data, aes(x = concentration, y = response)) +
+  geom_line() +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Normal scale") +
+  coord_cartesian(ylim=c(5, 25)) +
+  theme_light()
+
+
+p2 <- ggplot(data, aes(x = concentration, y = response)) +
+  #geom_point() + 
+  geom_line() +
+  scale_x_log10() +
+  annotation_logticks(side="b") +
+  #geom_segment(x = 0, xend = 5, y = 5, yend=15) +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Semilogarithmic scale") +
+  coord_cartesian(ylim=c(5, 25)) +
+  theme_light()
+
+p1 + p2 + plot_layout(ncol = 2)
+
+```
+
+
+This model, like its linear counterpart, assumes that the effect is proportional to the concentration of the drug. Its simplicity is attractive, but it has no biological basis, and in the specific case of the log-linear model, $C$ can never be zero.
+
+#### Emax model
+
+The E~max~ model is the workhorse of pharmacodynamic models, being relatively simple but based on biological theory.  
+
+$K_d$ is often referred to as $EC_{50}$ in situations in which we need to correlate the concentration of a drug with a biological effect, and in this context is the concentration corresponding to the half-maximal difference between the baseline $E_0$ and maximum effect $E_{max}$. 
+
+```{r}
+#| label: fig-emax-pd
+#| fig-cap: "E~max~ model with a baseline effect."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(ggplot2)
+
+# Sample data with a baseline effect
+concentration <- c(seq(0.01, 50, by=0.01))
+response      <- 5 + 25 * concentration / (1 + concentration)
+data <- data.frame(concentration, response)
+
+# plot the model
+p1 <- ggplot(data, aes(x = concentration, y = response)) +
+  geom_line() +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Normal scale") +
+  geom_hline(yintercept = 5, linetype="dashed") +
+  geom_hline(yintercept = 30, linetype="dashed") +
+  geom_segment(x = 0, xend = 1, y = 17.5, yend=17.5, linetype=2) +
+  geom_segment(x = 1, xend = 1, y = 17.5, yend=0, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  geom_segment(x = 10, xend = 10, y = 10, yend=30, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  geom_segment(x = 10, xend = 10, y = 10, yend=5, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  annotate("text", x = 28, y = 6, label = expression(paste(E[0])), size = 5, angle=0, hjust=0,col="black") +
+  annotate("text", x = 11, y = 17.5, label = expression(paste(E[max])), size = 5, angle=0, hjust=0,col="black") +
+  annotate("text", x = 2, y = 0, label = expression(paste(EC[50])), size = 5, angle=0, hjust=0,col="black") +
+  coord_cartesian(ylim=c(0, 32), xlim=c(0,30)) +
+  theme_light()
+
+
+p2 <- ggplot(data, aes(x = concentration, y = response)) +
+  #geom_point() + 
+  geom_line() +
+  #geom_segment(x = 0, xend = 5, y = 5, yend=15) +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Semilogarithmic scale") +
+  coord_cartesian(ylim=c(0, 32)) +
+  geom_hline(yintercept = 5, linetype="dashed") +
+  geom_hline(yintercept = 30, linetype="dashed") +
+  geom_segment(x = log(0.01), xend = log(1), y = 17.5, yend=17.5, linetype=2) +
+  geom_segment(x = log(1), xend = log(1), y = 17.5, yend=0, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  geom_segment(x = log(2), xend = log(2), y = 10, yend=30, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  geom_segment(x = log(2), xend = log(2), y = 10, yend=5, linetype=2, arrow = arrow(type = "closed",length = unit(0.3, "cm"))) +
+  annotate("text", x = 28, y = 6, label = expression(paste(E[0])), size = 5, angle=0, hjust=0,col="black") +
+  annotate("text", x = 6, y = 17.5, label = expression(paste(E[max])), size = 5, angle=0, hjust=0,col="black") +
+  annotate("text", x = 1.5, y = 0, label = expression(paste(EC[50])), size = 5, angle=0, hjust=0,col="black") +
+    scale_x_log10() +
+  annotation_logticks(side="b") +
+  theme_light()
+
+p1 + p2 + plot_layout(ncol = 2)
+
+```
+
+So, then, E~max~ can be expressed as -
+
+$$
+E = E_0 + \frac{E_{max} \cdot C}{EC_{50} + C}
+$$
+
+This reflects an agonistic effect, but we can also model antagonistic effects. In this case, we can use the following equation:
+
+$$
+E = E_0 - \frac{I_{max} \cdot C}{IC_{50} + C}
+$$
+
+where $I_{max}$ is the maximum inhibitory effect, and $IC_{50}$ is the concentration of the drug that produces 50% of $I_{max}$.
+
+One could also parameterize the E~max~ model such that $E_{max}$ is the fractional increase in effect over baseline, rather than the absolute increase: 
+
+$$
+E = E_0 \cdot  \left( 1 + \frac{E_{max} \cdot C}{EC_{50} + C}\right)
+$$
+(and similarly for the antagonistic model).
+
+#### Sigmoid Emax model
+
+The E~max~ model is a special case of the sigmoid E~max~ model, which is a more general model that can describe a wider range of concentration-effect relationships. The sigmoid E~max~ model (or _Hill equation_, as it is often known) is defined as:
+
+$$
+E = \frac{E_{max} \cdot C^n}{EC_{50}^n + C^n}
+$$
+
+where $n$ is the Hill coefficient, which describes the steepness of the concentration-effect curve. A Hill coefficient of 1 indicates a linear relationship between concentration and effect (the basic E~max~ model, in other words), while a Hill coefficient greater than 1 indicates a sigmoidal relationship. The Hill coefficient can also be less than 1, in which case the curve is sigmoidal but concave.
+
+```{r}
+#| label: fig-sigemax-pd
+#| fig-cap: "Sigmoid E~max~ model."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 9
+#| width: 15
+
+library(ggplot2)
+
+# Sample data with a baseline effect
+concentration <- c(seq(0.01, 50, by=0.01))
+response1     <- 25 * concentration / (1 + concentration)
+response2     <- 25 * concentration^2 / (1 + concentration^2)
+response3     <- 25 * concentration^0.5 / (1 + concentration^0.5)
+
+data <- data.frame(concentration, response1, response2, response3)
+
+# plot the model
+p1 <- ggplot(data, aes(x = concentration, y = response1)) +
+  geom_line() +
+  geom_line(aes(y=response2), color="red") +
+  geom_line(aes(y=response3), color="blue") +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Normal scale") +
+  annotate("text", x = 5, y = 16, label = "n = 0.5", size = 5, angle=0, hjust=0,col="blue") +
+  annotate("text", x = 5, y = 26, label = "n = 2", size = 5, angle=0, hjust=0,col="red") +
+  annotate("text", x = 10, y = 21, label = "n = 1", size = 5, angle=0, hjust=0,col="black") +
+  coord_cartesian(ylim=c(0, 28), xlim=c(0,30)) +
+  theme_light()
+
+
+p2 <- ggplot(data, aes(x = concentration, y = response1)) +
+  geom_line() +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Semilogarithmic scale") +
+  geom_line(aes(y=response2), color="red") +
+  geom_line(aes(y=response3), color="blue") +
+  labs(x = "Concentration",
+       y = "Response",
+       title="Normal scale") +
+  annotate("text", x = 5, y = 16, label = "n = 0.5", size = 5, angle=0, hjust=0,col="blue") +
+  annotate("text", x = 5, y = 26, label = "n = 2", size = 5, angle=0, hjust=0,col="red") +
+  annotate("text", x = 10, y = 21, label = "n = 1", size = 5, angle=0, hjust=0,col="black") +
+  coord_cartesian(ylim=c(0, 28), xlim=c(0.01,30)) +
+    scale_x_log10() +
+  annotation_logticks(side="b") +
+  theme_light()
+
+p1 + p2 + plot_layout(ncol = 2)
+
+```
+
+When two drugs exert effects on a given system, or when a single drug exerts an effect on a single receptor, things become more complicated. Composite E~max~ models, in which two E~max~ models with different $E_{max}$/$I_{max}$ and $EC_{50}$/$IC_{50}$ parameters can be applied in situations in which biphasic response is observed. An example would be _u-shaped_ or _bell-shaped_ exposure-response curves. More detail can be found in Gabrielsson and Weiner [@gabrielsson_pharmacokinetic_2007].
+
+### Kinetics of response
+
+Pharmacodynamic models are all very nice, but it is is crucial to understand the concentration changes over time, and thus, so does response. Pharmackinetic-pharmacodynamic (PK-PD) models provide a useful way to tackle this.
+
+#### Direct effect models
+
+With direct effect models, concentration and response are assumed to be in instant equilibrium, and changes in concentration instantaneously affect response. [@fig-direct-model] provides an illustration.
+
+![The direct effect model.](1cpt_direct.png){fig-alt="The direct effect model." width=80% #fig-direct-model}
+
+#### Indirect effect models
+
+Sometimes, response does not occur instantaneously, but instead takes time to develop, without an obvious link to the observed plasma concentration, a state of affairs called _hysteresis_ [@fig-pkpd]. There are a number of ways to handle this time delay.
+
+```{r}
+#| label: fig-pkpd
+#| fig-cap: "Sigmoid E~max~ model."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 6
+#| width: 10
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(ggrepel)
+
+options(scipen = 999)
+
+## IV PK curve
+
+mod2 <- function() {
+  ini({
+    # central compartment
+    KA   = 1  # /h
+    CL   = 20   # L/h
+    V    = 40   # L
+    KIN  = 0.1  # /h
+    KOUT = 0.05 # /h
+    EMAX = 10   # effect
+    EC50 = 5    # mg/L
+  })
+  model({
+    effect(0) <- KIN/KOUT   # at equilibrium
+    C2        <- centr/V    # concentration in the central compartment
+    
+    d/dt(depot) <- -KA*depot                         # depot compartment
+    d/dt(centr) <-  KA*depot - CL*C2 
+    d/dt(effect) <- KIN * (1 + (EMAX * C2)/(EC50 + C2)) - KOUT * effect
+  })
+}
+
+et   <- et(amt=400, cmt=1, time=0) %>%
+  add.sampling(seq(0, 24, length.out=500))
+
+
+effmod <- rxSolve(mod2, et)
+
+effpk <- ggplot(effmod, aes(time, C2)) +
+    geom_line() +
+    labs(title="Concentration",
+         x = "Time (h)",
+         y = "Concentration (mg/L)")+
+  theme_light()
+
+effpd <-  ggplot(effmod, aes(time, effect)) +
+    geom_line() +
+    labs(title="Effect",
+         x = "Time (h)",
+         y = "Response")+
+  theme_light()
+
+#effpk + effpd + plot_layout(ncol = 2)
+
+pkpddat <- tibble(
+  time = rep(effmod$time, times=2),
+  C2 = c(effmod$C2, effmod$effect),
+  Type = rep(c("Concentration", "Response"), each=nrow(effmod))
+)
+
+effpkpd <- ggplot(pkpddat, aes(time, C2)) +
+    geom_line(aes(col=Type)) +
+    labs(title="Concentration and response",
+         x = "Time (h)",
+         y = "Concentration (mg/L) / Response")+
+  theme_light() + theme(legend.position = "bottom",
+                        legend.title = element_blank())
+
+dftime <- effmod[seq(1, nrow(effmod), 50), ]
+
+
+hysteresis <- ggplot(effmod, aes(C2, effect)) +
+    geom_path() +
+  geom_point(data=dftime, aes(C2, effect), col="red") +
+  geom_label_repel(data=dftime, aes(C2, effect, label=paste(round(time, 1), "h", sep=" "))) +
+    labs(title="Hysteresis",
+         y = "Response",
+         x = "Concentration (mg/L)")+
+  theme_light() 
+
+effpkpd + hysteresis + plot_layout(ncol = 2)
+```
+
+Indirect effect models, also called turnover models or effect compartment models, describe the "turnover" of observed responses in response to stimuli, in this case drug concentration. They tend to be (more) physiologically based and their parameters can often take a mechanistic meaning. Per the seminal paper by Dayneka et al [@Dayneka1993], there are four main types of indirect effect models [@fig-dayneka].
+
+![Four basic models of indirect pharmacodynamic responses.](dayneka.png){fig-alt="Four basic models of indirect pharmacodynamic responses." width=80% #fig-dayneka}
+
+```{r}
+#| label: fig-dayneka-plots
+#| fig-cap: "Four basic models of indirect pharmacodynamic responses, plotted."
+#| warning: false
+#| message: false
+#| echo: false
+#| height: 18
+#| width: 15
+
+library(rxode2)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+library(ggrepel)
+
+options(scipen = 999)
+
+## Model I ###############################################
+
+mod_dayneka1 <- function() {
+  ini({
+    CL   = 24.94   # L/h
+    V    = 86      # L
+    KIN  = 6.10  # /h
+    KOUT = 0.244 # /h
+    IC50 = 8.06    # mg/L
+  })
+  model({
+    effect(0) <- KIN/KOUT   # at equilibrium
+    C2        <- centr/V    # concentration in the central compartment
+    
+    d/dt(centr) <-  - CL*C2 
+    d/dt(effect) <- KIN*(1-(C2/(C2+IC50))) - KOUT * effect
+  })
+}
+
+et   <- et(id=seq(1,4,by=1), amt=c(1,10,100,1000)*1000, cmt=1, time=0) %>%
+  add.sampling(seq(0, 36, length.out=500)) 
+
+effmod1 <- rxSolve(mod_dayneka1, et)
+
+effmod1$id <- factor(effmod1$id)
+
+effmod1$Dose[effmod1$id==1] <- "1 mg"
+effmod1$Dose[effmod1$id==2] <- "10 mg"
+effmod1$Dose[effmod1$id==3] <- "100 mg"
+effmod1$Dose[effmod1$id==4] <- "1000 mg"
+
+effday1 <- ggplot(effmod1, aes(time, effect)) +
+    geom_line(aes(group=Dose, col=Dose)) +
+    labs(title=expression(paste("I. Inhibition of ", k['in'], sep="")),
+         x = "Time (h)",
+         y = "Effect")+
+  coord_cartesian(ylim=c(0, 25)) +
+  theme_light() + theme(legend.position = "bottom",
+                        legend.title = element_blank())
+
+## Model II ##############################################
+
+mod_dayneka2 <- function() {
+  ini({
+    CL   = 24.94   # L/h
+    V    = 86      # L
+    KIN  = 6.10  # /h
+    KOUT = 0.244 # /h
+    IC50 = 8.06    # mg/L
+  })
+  model({
+    effect(0) <- KIN/KOUT   # at equilibrium
+    C2        <- centr/V    # concentration in the central compartment
+    
+    d/dt(centr) <-  - CL*C2 
+    d/dt(effect) <- KIN - KOUT*(1-(C2/(C2+IC50))) * effect
+  })
+}
+
+et   <- et(id=seq(1,4,by=1), amt=c(1,10,100,1000)*1000, cmt=1, time=0) %>%
+  add.sampling(seq(0, 36, length.out=500)) 
+
+effmod2 <- rxSolve(mod_dayneka2, et)
+
+effmod2$id <- factor(effmod2$id)
+
+effmod2$Dose[effmod2$id==1] <- "1 mg"
+effmod2$Dose[effmod2$id==2] <- "10 mg"
+effmod2$Dose[effmod2$id==3] <- "100 mg"
+effmod2$Dose[effmod2$id==4] <- "1000 mg"
+
+effday2 <- ggplot(effmod2, aes(time, effect)) +
+    geom_line(aes(group=Dose, col=Dose)) +
+    labs(title=expression(paste("II. Inhibition of ", k[out], sep="")),
+         x = "Time (h)",
+         y = "Effect")+
+  coord_cartesian(ylim=c(0, 130)) +
+  theme_light() + theme(legend.position = "bottom",
+                        legend.title = element_blank())
+
+## Model III #############################################
+
+mod_dayneka3 <- function() {
+  ini({
+    CL   = 24.94   # L/h
+    V    = 86      # L
+    KIN  = 6.10  # /h
+    KOUT = 0.244 # /h
+    EC50 = 8.06    # mg/L
+    EMAX = 4       # unitless
+  })
+  model({
+    effect(0) <- KIN/KOUT   # at equilibrium
+    C2        <- centr/V    # concentration in the central compartment
+    
+    d/dt(centr) <-  - CL*C2 
+    d/dt(effect) <- KIN*(1+(EMAX*C2/(C2+EC50))) - KOUT * effect
+  })
+}
+
+et   <- et(id=seq(1,4,by=1), amt=c(1,10,100,1000)*1000, cmt=1, time=0) %>%
+  add.sampling(seq(0, 36, length.out=500)) 
+
+effmod3 <- rxSolve(mod_dayneka3, et)
+
+effmod3$id <- factor(effmod3$id)
+
+effmod3$Dose[effmod3$id==1] <- "1 mg"
+effmod3$Dose[effmod3$id==2] <- "10 mg"
+effmod3$Dose[effmod3$id==3] <- "100 mg"
+effmod3$Dose[effmod3$id==4] <- "1000 mg"
+
+effday3 <- ggplot(effmod3, aes(time, effect)) +
+    geom_line(aes(group=Dose, col=Dose)) +
+    labs(title=expression(paste("III. Stimulation of ", k['in'], sep="")),
+         x = "Time (h)",
+         y = "Effect")+
+  coord_cartesian(ylim=c(0, 130)) +
+  theme_light() + theme(legend.position = "bottom",
+                        legend.title = element_blank())
+
+## Model IV ##############################################
+
+mod_dayneka4 <- function() {
+  ini({
+    CL   = 24.94   # L/h
+    V    = 86      # L
+    KIN  = 6.10  # /h
+    KOUT = 0.244 # /h
+    EC50 = 8.06    # mg/L
+    EMAX = 4       # unitless
+  })
+  model({
+    effect(0) <- KIN/KOUT   # at equilibrium
+    C2        <- centr/V    # concentration in the central compartment
+    
+    d/dt(centr) <-  - CL*C2 
+    d/dt(effect) <- KIN - KOUT*(1+(EMAX*C2/(C2+EC50))) * effect
+  })
+}
+
+et   <- et(id=seq(1,4,by=1), amt=c(1,10,100,1000)*1000, cmt=1, time=0) %>%
+  add.sampling(seq(0, 36, length.out=500)) 
+
+effmod4 <- rxSolve(mod_dayneka4, et)
+
+effmod4$id <- factor(effmod1$id)
+
+effmod4$Dose[effmod4$id==1] <- "1 mg"
+effmod4$Dose[effmod4$id==2] <- "10 mg"
+effmod4$Dose[effmod4$id==3] <- "100 mg"
+effmod4$Dose[effmod4$id==4] <- "1000 mg"
+
+effday4 <- ggplot(effmod4, aes(time, effect)) +
+    geom_line(aes(group=Dose, col=Dose)) +
+    labs(title=expression(paste("IV. Stimulation of ", k[out], sep="")),
+         x = "Time (h)",
+         y = "Effect")+
+  coord_cartesian(ylim=c(0, 25)) +
+  theme_light() + theme(legend.position = "bottom",
+                        legend.title = element_blank())
+
+
+effday1 + effday3 + 
+  effday2 + effday4 + 
+  plot_layout(ncol = 2)
+
+```
+
+[@fig-dayneka-plots] shows examples of our four models. The choice of which one to use should be informed by the analyst's knowledge of the underlying biology more than anything else - what do we know about what the drug is doing at the receptor level? These models reflect reversible binding; irreversible binding is also possible, but is beyond the scope of this discussion. The article by Dayneka, Garg and Jusko [@Dayneka1993] provides an excellent overview of the topic.
+
+#### Effect compartment (link) models
+
+Effect compartment models are a special case of indirect effect models, in which the drug effect is delayed due to the time it takes for the drug to reach the site of action (the biophase). The effect compartment is a hypothetical compartment that represents the biophase - drug effect is assumed to be proportional to the concentration of the drug in this  compartment. After the drug binds the receptor, a series of events takes place that eventually results in the observed effect. The effect compartment model is a useful way to describe the time course of drug effect.
+
+#### Tolerance and rebound models
+
+Tolerance is the phenomenon in which the response to a drug _decreases_ over time, while rebound is the phenomenon in which the response to a drug _increases_ over time. Tolerance and rebound can be captured using modeling - there are a large variety of methods by which this can be done, including systems approaches, tolerance compartments, and turnover of receptor regulation. Gabrielsson and Weiner provide a comprehensive overview in their book.
+
+#### Baseline models
+
+Up until now, we have only considered situations in which effects are exerted on response variables that do not vary independently of drug concentration over time. Most physiological variables, however, show chronobiologic rhythm, such as blood pressure, heart rate, and body temperature. Baseline models are used to describe the time course of these variables, so that drug effects on systems like these can be accurately estimated.
+
+
+
+
+
+
+

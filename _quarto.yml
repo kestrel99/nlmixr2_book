@@ -5,16 +5,16 @@ project:
 book:
   title: "Nonlinear mixed-effects modelling with nlmixr2"
   author: 
-  - Matthew Fidler, Novartis
   - Justin J. Wilkins, Occams
+  - Matthew Fidler, Novartis
   
-  date: "24/10/2023"
+  date: "26/11/2024"
   
   page-footer:
     left: |
-      Nonlinear mixed-effects modelling with nlmixr2 was written by Matthew Fidler, Justin Wilkins, 
+      Nonlinear mixed-effects modelling with nlmixr2 was written by Justin Wilkins, Matthew Fidler, 
       William Denney, John Harrold, Richard Hooijmaaijers, Rik 
-      Schoemaker, Mirjam Trame, Yuan Xiong and Huijuan Xu.
+      Schoemaker and Mirjam Trame.
     right: |
       This book was built with <a href="https://quarto.org/">Quarto</a>.
   repo-url: https://github.com/kestrel99/nlmixr2_book/
@@ -27,35 +27,42 @@ book:
         - 01_intro.qmd
         - 02_prerequisites.qmd
         - 03_history.qmd
-        - 04_intro_to_nlme.qmd
-    - part: Simulations with `rxode2`
+    - part: "Population Pharmacokinetics and Pharmacodynamics"
       chapters: 
-        - 05_getting_started.qmd
-        - 06_events.qmd
-        - 07_single_subjects.qmd
-        - 08_populations.qmd
-        - 09_more_complex_examples.qmd
+        - 04_intro_to_poppkpd.qmd
+        - 05_intro_to_nlme.qmd
+    - part: "Simulations with `rxode2`"
+      chapters: 
+        - 06_models.qmd
+        - 07_events.qmd
+        - 08_single_subjects.qmd
+        - 09_populations.qmd
+        - 10_more_complex_examples.qmd
+    - part: "Data Preparation and Management"
+      chapters: 
+        - 11_data_structure.qmd
+        - 12_exploratory_analysis.qmd
     - part: "Modeling with `nlmixr2`"
       chapters: 
-        - 10_parameter_estimation_and_model_fitting.qmd
-        - 11_diagnostics_and_evaluation.qmd
-        - 12_handling_covariate_effects.qmd
-        - 13_model_selection_and_comparison.qmd
-        - 14_case_studies_and_practical_applications.qmd
-        - 15_tracking_work_with_shinymixr.qmd
+        - 13_parameter_estimation_and_model_fitting.qmd
+        - 14_diagnostics_and_evaluation.qmd
+        - 15_handling_covariate_effects.qmd
+        - 16_model_selection_and_comparison.qmd
+        - 17_case_studies_and_practical_applications.qmd
+        - 18_tracking_work_with_shinymixr.qmd
     - part: "Advanced topics"
       chapters: 
-        - 16_inside_mixrverse.qmd
-        - 17_extending_mixrverse.qmd
+        - 19_inside_mixrverse.qmd
+        - 20_extending_mixrverse.qmd
     - part: "The mixrverse"
       chapters: 
-        - 18_qualifying_mixrverse.qmd
-        - 19_babelmixr.qmd
-        - 20_mixrverse.qmd
+        - 21_qualifying_mixrverse.qmd
+        - 22_babelmixr.qmd
+        - 23_mixrverse.qmd
     - part: "The future"
       chapters: 
-        - 21_future_directions.qmd
-        - 22_final_thoughts.qmd
+        - 24_future_directions.qmd
+        - 25_final_thoughts.qmd
     - function_reference.qmd
     - references.qmd
 

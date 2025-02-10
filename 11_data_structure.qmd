@@ -1,0 +1,34 @@
+# Data structure
+
+`nlmixr2` and `rxode2` use the same record-based dataset structure as NONMEM, the industry gold standard, for its inputs. Doses, observations and other types of events are encoded as a "stream" of records, each of which is encoded as a row in a data frame. 
+
+## Default data items
+
+Data frames used with `nlmixr2` and `rxode2` support the following data items:  
+ 
+| Data Item | Meaning               | Notes                                                                        |
+|-----------|-----------------------|------------------------------------------------------------------------------|
+| `id`        | Unique identifier | Can be integer, factor, character, or numeric.                              |
+| `time`      | Time       | Numeric.                                                       |
+| `dv`      | Dependent variable       | Numeric. Not used for simulations.                                                      |
+| `mdv`      | Flag for missing dependent variable       | 0=not missing; 1=missing. Not used for simulations.                                                      |
+| `amt`       | Dose amount           | Positive for doses, zero or `NA` for observations.                                  |
+| `rate`      | Infusion rate         | When specified, infusion duration will be `dur`=`amt`/`rate`. Specified for doses, zero or `NA` for observations.                  |
+|           |                       | Alternatively, `rate` can take the following values: -1=rate modeled; -2=duration modeled.                         |
+| `dur`       | Infusion duration     | When specified, infusion rate will be `rate`=`amt`/`dur`. Specified for doses, zero or `NA` for observations.                     |
+| `evid`      | Event identifier              | 0=observation; 1=dose; 2=other; 3=reset; 4=reset+dose; 5=replace; 6=multiply; 7=transit. |
+| `cmt`       | Compartment           | Can be integer, factor or character.                           |
+| `ss`        | Steady state flag     | 0=non-steady-state; 1=steady state; 2=steady state+prior states. Specified for doses, zero or `NA` for observations.          |
+| `ii`        | Interdose interval   | Time between successive doses. Requires `addl`.  Specified for doses, zero or `NA` for observations.                                                         |
+| `addl`      | Number of additional doses | Number of times to repeat current dose. Requires `ii`.  Specified for doses, zero or `NA` for observations.                                     |
+
+We've talked a lot about event types already - see @sec-events. 
+
+`deSolve`-compatible data frames can also be used, but an extensive discussion of this functionality is beyond the scope of this book.
+
+## Additional columns
+
+Any number of additional columns may be used, as and where necessary. Covariates are often specified this way - continuous covariates should be numeric, but categorical covariates can be integers, strings or factors.
+
+
+

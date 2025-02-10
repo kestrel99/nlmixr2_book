@@ -1,0 +1,644 @@
+# Specifying models in `rxode2` and `nlmixr2`
+
+## Model syntax
+
+Models can take four forms in `rxode2`.
+
+Consider a very simple three-compartment system. Let's assume we know the values of CL, V2, Q and KA.
+
+First, and most simply, `rxode2({})` block statements can be used.
+
+```
+library(rxode2)
+
+mod <- rxode2({
+  C2 <- central/V2
+
+  # time-derivative 
+  d/dt(central) <- F*KA*depot - CL*C2 - Q*C2 + Q*C3;
+})
+```
+
+One could also put the model inside an `rxode2("")` string statement:
+
+```
+mod <- rxode2("
+  C2 <- central/V2
+
+  # time-derivative assignment
+  d/dt(central) <- F*KA*depot - CL*C2 - Q*C2 + Q*C3;
+")
+```
+
+We could load the model code from an external file:
+
+```
+writeLines("
+  C2 <- central/V2
+
+  # time-derivative assignment
+  d/dt(central) <- F*KA*depot - CL*C2 - Q*C2 + Q*C3;
+", 
+  "modelFile.rxode2")
+
+mod <- rxode2(filename='modelFile.rxode2')
+```
+
+Or we could specifiy the model as part of a model function:
+
+```
+mod <- function() {
+  model({
+    C2 <- central/V2
+
+    # time-derivative assignment
+    d/dt(central) <- F*KA*depot - CL*C2 - Q*C2 + Q*C3;
+  })
+}
+
+mod <- rxode2(mod) # or simply mod() if the model is at the end of the function
+```
+
+This last formulation is the most convenient for our purposes, since it is easy to read and write, can be modified by using piping, and is the format used by `nlmixr2`. Model functions often have residual components and initial conditions attached as well - the classical theophylline model, for example, can be defined as:
+
+```
+one.compartment <- function() {
+  ini({
+    tka <- 0.45   # log KA
+    tcl <- 1      # log CL
+    tv  <- 3.45   # log V
+    
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v  ~ 0.1
+    
+    add.sd <- 0.7
+  })
+  model({
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    v  <- exp(tv + eta.v)
+    
+    d/dt(depot) = -ka * depot
+    d/dt(center) = ka * depot - cl / v * center
+    
+    cp = center / v
+    
+    cp ~ add(add.sd)
+  })
+}
+
+# after parsing, compile
+mod <- one.compartment()
+```
+
+`rxode2` translates the ODE system into C, compiles it, and loads it into the R session where it can be used. The call to `rxode2` produces an object of class `rxode2` which consists of a list-like structure (environment) with various member functions.
+
+### Statements
+
+A basic model specification consists of one or more statements, optionally terminated by semi-colons (`;`) and optional comments (comments are delimited by `#` and an end-of-line).
+
+A _block_ of statements is a set of statements delimited by curly braces (`{...}`).
+
+Statements can be either assignments, conditionals (`if`/`else`), `while` loops, special statements, or printing statements (which can be used for debugging and testing).
+
+Assignment statements can be:
+
+- _Simple assignments_, in which the left side is an identifier (a variable) and the right is the value it is assigned.
+- _Time-derivative assignments_, in which the left side specifies the change of the amount in the corresponding state variable (compartment) with respect to time (e.g.  `d/dt(depot)`), and the right is the corresponding expression.
+- _Initial-condition assignments_, in which the left side specifies the compartment of the for which an initial condition is being defined, and the right is the initial value (e.g. `depot(0) = 0`).
+- _Model characteristic assignments_, in which a characteristic of the model can be set, including:
+  - bioavailability (e.g. `f(depot) = 1`), 
+  - lag time (e.g. `alag(depot) = 0`), 
+  - modeled rate (e.g. `rate(depot) = 2`) and 
+  - modeled duration (e.g. `dur(depot) = 2`). 
+- _Change point_ assignments, in which time-based changes to the system can be modeled (e.g.  `mtime(var) = time`).
+- _Jacobian-derivative assignments_, in which the left side specifies the change in the compartment ODE with respect to a variable, and the right is the corresponding expression. For example, if `d/dt(y) = dy`, a Jacobian for this compartment can be specified as `df(y)/dy(dy) = 1`. This is sometimes useful for very stiff ODE systems, but speed is adversely affected.
+- _String value declarations_, which specify the values a given string variable will take within an `rxode2` solving structure. These values direct corresponding factors to be created for this variable on solving the `rxode2` model (e.g. `labels(a) <- c("a1", "a2")`).
+- _Special assignments_, including:
+  - _Compartment declaration_ statements, which can be used to change the default dosing compartment and the assumed compartment number(s) as well as add extra compartment names at the conclusion of the solving or fitting process (useful for multiple-endpoint `nlmixr2` models). These are specified by `cmt(compartment name)`.
+  - _Parameter declaration_ statements, which can be used to specify that input parameters are encoded in an explicit order instead of in the order in which they are parsed. This is useful for keeping the parameter order the same when using different ODE models. These are specified by `param(par1, par2,...)`.
+  - _Variable interpolation_ statements, which specify the interpolation method for specific covariates. These include `locf(cov1, cov2, ...)` for last observation carried forward, `nocb(cov1, cov2, ...)` for next observation carried backward, `linear(cov1, cov2, ...)` for linear interpolation and `midpoint(cov1, cov2, ...)` for midpoint interpolation.
+
+Expressions in assignment and conditional statements can be numeric or logical (`TRUE` or `FALSE`).
+
+Numeric expressions can include common numeric operators (`+`, `-`, `*`, `/`, `^`) and  mathematical functions defined in the C or the R mathematics libraries (including but not limited to `fabs`, `exp`, `log`, `sin`, `abs`). R's internal functions may also be used, such as `lgammafn` for the log gamma function. The modulo operator (`%%`) is currently unsupported.
+
+`rxode2` syntax is case-sensitive, i.e., ABC is different than abc, Abc, ABc, etc.
+
+### Identifiers
+
+As in R, identifiers (variable names) may consist of one or more alphanumeric, underscore (`_`) or period (`.`) characters, although the first character cannot be a digit or an underscore.
+
+Identifiers in a model specification can refer to:
+
+- _State variables_ in the dynamic system (such as compartments in a pharmacokinetic or pharmacodynamic model).
+- _Implied input variables_, including `t` (time), `tlast` (last time point), and `podo` (oral dose, in the case of absorption transit models).
+- _Special constants_ such as `pi` or predefined constants inherited from R.
+- _Model parameters_ such as `ka` (rate of absorption) and `CL` (clearance).
+- _Other identifiers_, as created by assignments as part of the model specification; these are referred as LHS (left-hand side) variables.
+
+Currently, the `rxode2` modeling language only recognizes system state variables and parameters, so any values that must be passed from R to the model (covariates such as age, for example) should be either passed in the `params` argument of the integrator function or be present in the event dataset (or the `nlmixr2` dataset).
+
+### Reserved terms
+
+`rxode2` models use a number of reserved terms (internal variables, or used to define event records) which cannot be used as variable names and cannot be assigned, or used as a state, but can be accessed in the `rxode2` code. These include `addl`, `amt`, `cmt`, `dur`, `dvid`, `id`, `print`, `printf`, `rate`, `Rprintf` and `ss`. The variables `evid` and `ii` are also reserved and may never be used anywhere in model code. Details of what these are may be found in @sec-events. 
+
+In addition to these event-related terms, the following are also reserved (although most can be accessed).
+
+| Reserved Name | Meaning                    | Alias                                |
+|----------------|----------------|-----------------------------------------|
+| `time`      | Solver time      | `t`                                      |      
+| `podo`	    | Time of last dose   |      |
+| `tlast`	    | Last dose amount (transit models)   |      |
+| `pi`	    | `pi`		   |      |
+| `NA`	    | `NA`	   |      |
+| `NaN`	    | Not a number		   |      |
+| `Inf`	    | Infinite	   |      |
+| `newind`	    | 1: First record of individual; 2: Subsequent record of individual		   |     `NEWIND` |
+| `rxFlag`	    | Flag for the part of the model being run. 1: ddt; 2: jac; 3: ini; 4: F; 5: lag; 6: rate; 7: dur; 8: mtime; 9: matrix exponential; 10: inductive linearization; 11: lhs	   |      |
+| `M_E`	      | `exp(1)`     |      |
+| `M_LOG2E`	    | `log2(e)`	   |      |
+| `M_LOG10E`	    | `log10(e)`   |      |
+| `M_LN2`	    | `log(2)`	   |      |
+| `M_LN10`	    | `log(10)`   |      |
+| `M_PI`	    | `pi`   |      |
+| `M_PI_2`	    | `pi/2`   |      |
+| `M_PI_4`	    | `pi/4`   |      |
+| `M_1_PI`	    | `1/pi`   |      |
+| `M_2_PI`	    | `2/pi`   |      |
+| `M_2_SQRTPI`	    | `2/sqrt(pi)`   |      |
+| `M_SQRT2`	    | `sqrt(2)`	   |      |
+| `M_SQRT1_2`	    |	`1/sqrt(2)`   |      |
+| `M_SQRT_3`	    | `sqrt(3)`		   |      |
+| `M_SQRT_32`	    | `sqrt(32)`		   |      |
+| `M_LOG10_2`	    | `log10(2)`	   |      |
+| `M_2PI`	    | `2*pi`	   |      |
+| `M_SQRT_PI`	    | `sqrt(pi)`		   |      |
+| `M_1_SQRT_2PI`	    | `1/(sqrt(2*pi))`	   |      |
+| `M_LN_SQRT_PI`	    | `log(sqrt(pi))`			   |      |
+| `M_LN_SQRT_2PI`	    | `log(sqrt(2*pi))`	   |      |
+| `M_LN_SQRT_PId2`	    | `log(sqrt(pi/2))`		   |      |
+
+`rxode2` and `nlmixr2` generate variables that are used internally as part of the solving or estimation process, typically with the prefixes `rx` and `nlmixr`. To avoid any unexpected issues, it is (strongly) suggested that variables starting with either `rx` or `nlmixr` not be used.
+
+### Logical operators
+
+The standard R logical operators `==`, `!=`, `>=`, `<=`, `>`, and `<` are supported. Like R, these can be used in `if()`, `while()` and `ifelse()` expressions. They can also be used in standard assignments. For instance, the following is valid:
+
+```
+cov1 = covf*(sexf == "female") + covm*(sexf != "female")
+```
+
+Character expressions can be used in comparisons. This convenience comes at a cost, however, since character comparisons are slower than numeric expressions. 
+
+### Supported functions
+
+All the functions supported in `rxode2` can be returned using `rxSupportedFuns()`. Since there are more than 200 of them, we won't discuss them all, but suffice it to say that whatever you might need is available in some form. The assortment includes trigonometry, virtually all statistical distributions of any note, and many, many log-likelihoods.
+
+### Residual error
+
+#### Simple form
+
+The tilde (`~`) is used to specify a residual output or endpoint. For variable `var`, the variable that represents the individual central tendency of the model's dependent variable as well as the compartment specification in the dataset, a residual error statement can be written like this:
+
+```
+var ~ add(add.sd)
+```
+
+which corresponds to
+
+$$
+y = f + a \cdot \epsilon
+$$
+where `y` is the value of the dependent variable in the current individual, `f` is the central tendency of the observation in the current individual, `a` is the standard deviation of the residual error, and $\epsilon$ is normally-distributed with mean 0 and standard deviation 1, or
+
+```
+var ~ prop(prop.sd)
+```
+
+$$
+y = f + b \cdot f^c \cdot \epsilon
+$$
+where `b` is the coefficient describing the the extent to which $\epsilon$ is proportional to `f`, and `c` is a power coefficient (usually fixed to 1). 
+
+We can use additive (`add()`) or proportional (`prop()`) residual error models, or both; here, they are expressed as standard deviations.
+
+Sometimes we'd like to change the compartment the residual error is applied to. We can do this as follows:
+
+```
+var ~ add(add.sd) | cmt
+```
+
+Here, `cmt` represents the compartment we'd like the residual error to apply to. This is particularly useful for models with multiple endpoints.
+
+#### Combined additive and proportional residual error
+
+Combined additive and proportional models can be expressed in two different ways, which we will define as `combined1` and `combined2` (to avoid between-tool confusion, we have adopted the naming convention used by Monolix).
+
+The first variant, `combined1`, assumes that the additive and proportional components are on the standard deviation scale, or:
+
+$$
+y = f+(a+b \cdot f^c) \cdot err
+$$
+
+This represents a linear combination of a constant error term (`a`) and a term proportional to the structural model `f` (`b`). The `c` parameter in this expression is usually fixed to 1.
+
+The second variant, `combined2`, assumes that additive and proportional components of the residual error are combined on the variance scale:
+
+$$
+y = f + \sqrt{(a^2+b^2 \cdot f^{2c})} \cdot \epsilon
+$$
+Here we have a combination of constant term `a` and a term proportional to the structural model `f` (`b`). Again, `c` is typically fixed to 1. If not otherwise specified, `combined2` is the default, and is considered to have "better" statistical properties. Combined models can be specified like this:
+
+```
+var ~ add(add.sd) + prop(prop.sd) + combined1()
+```
+
+or like this for `combined2`:
+
+```
+var ~ add(add.sd) + prop(prop.sd) # combined2 is the default
+```
+
+
+#### Transformations
+
+Sometimes, if our residual error distribution is not normal, using the default normal distribution for the residual error model is just not going to be adequate. Fortunately, `rxode2` and `nlmixr2` support several transformations that might be of use. Be warned, though: here there be tygers.
+
+| Transformation | Usage                             |
+|----------------|-----------------------------------|
+| Box-Cox [@box_analysis_1964]       | `+boxCox(lambda)`                 | 
+| Yeo-Johnson [@yeo_new_2000]    |	`+yeoJohnson(lambda)`            | 
+| logit-normal [@aitchison_logistic-normal_1980] 	 | `+logitNorm(logit.sd, low, hi)`   |
+| probit-normal	[@bliss_method_1934]  | `+probitNorm(probit.sd, low, hi)` |
+| log-normal [@west_best_2022]     |	`+lnorm(lnorm.sd)`               |
+| T-distribution    | `+dt(df)`   |
+| Cauchy            | `+dcauchy()`   | 
+
+By default, the likelihood for all of these transformations is calculated on the untransformed scale.
+
+These functions require additional estimated parameters `lambda` (Box-Cox, Yeo-Johnson), a standard deviation (logit-normal, probit-normal and log-normal) and, optionally, lower and upper bounds (logit-normal and probit-normal).  For bounded transformations like the logit-normal or the probit-normal the low (`lo`) and high (`hi`) values default to 0 and 1 respectively if missing.
+
+`lnorm()`, `probitNorm()` and `logitNorm()` can be combined with the `yeoJohnson()` transformation if necessary (it usually isn't). dt() and dcauchy() can be combined with the other transformations if needed. An example of a proportional error model with Box-Cox and Cauchy in a PK model could be coded like this:
+
+```
+cp ~ prop(add.err) + boxCox(lambda) + dcauchy()
+```
+
+where `cp` is modeled concentration, and `lambda` is a parameter in the model.
+
+### Likelihood distributions
+
+#### Generalized likelihoods
+
+The likelihood for a compartment, if not the default, can be specified as:
+
+```
+ll(cmt) ~ llik specification
+```
+
+#### Ordinal likelihoods
+
+Let's consider a situation in which we have an ordered categorical dependent variable, such as a score, with 4 discrete values, 0-3. Ordinal likelihoods and simulations can be specified in 2 ways. The first is:
+
+```
+cmt ~ c(p0, p1, p2)
+```
+
+Here `cmt` represents the compartment, and `p0`, `p1` and `p2` represent the probabilities of being in specific category 0, 1, 2, or 3:
+
+| Category      | Probability     |
+|---------------|-----------------|
+| 0 	          | `p0`            |
+| 1 	          | `p1`            |
+| 2 	          | `p2`            |
+| 3 	          | `1 - p0 - p1 - p2`            |
+
+`p0` + `p1` + `p2` must add to less than 1 for this model to work. Using this formulation,  scores are often not integer values, which doesn't really make sense. We can fix this as follows:
+
+```
+cmt ~ c(p0=0, p1=1, p2=2, 3)
+```
+
+Here the numeric categories are specified explicitly, while the probabilities remain the same.
+
+### Working with strings
+
+Strings are converted to double values inside of `rxode2`, and can therefore be referred to as integers corresponding to the string value, or the string values themselves. For covariates, these are calculated on the fly based on your data, and it is not necessary (or advisable) to do anything additional. For strings defined in the model, however, either can be used. That said, it is never anything other than confusing, so we do not recommend it.
+
+
+## Model blocks
+
+`rxode2` and `nlmixr2` models are composed of two parts, the `ini` block, which contains initial estimates of the fixed and random effect parameters, and the `model` block,  which contains the model definition. [@fig-model-structure] provides a very simple description of how models are constructed.
+
+![Anatomy of a model.](model.png){fig-alt="Anatomy of a model." width=100% #fig-model-structure}
+
+### The `ini` block
+
+The `ini` block specifies initial conditions, including initial estimates. When estimation is required (for `nlmixr2`), boundaries may be specified for those algorithms that support them. Model parameters are typically expressed as follows:
+
+```
+parameter = initial estimate
+parameter = c(lower boundary, initial estimate)
+parameter = c(lower boundary, initial estimate, upper boundary)
+```
+
+`nlmixr2` supports both the standard R assignment operator (`<-`) and `=` for assignments. Simple expressions that evaluate to a number can be used for defining both initial conditions and boundaries, and `nlmixr2` allows specification of infinite parameters, as in:
+
+```
+parameter = c(-Inf, log(70), 7)
+```
+
+Importantly, initial conditions cannot be assigned directly  using local or global variable values in R, because the function is parsed rather than evaluated directly. Furthermore, other parameter values cannot be used as boundaries in the `ini` block. You can see how `nlmixr2` parses the model by "evaluating" it, as follows:
+
+```{r}
+library(nlmixr2)
+
+one.cmt <- function() {
+  ini({
+    ## You may label each parameter with a comment
+    tka <- 0.45                # Log Ka
+    tcl <- log(c(0, 2.7, 100)) # Log Cl
+    ## This works with interactive models
+    ## You may also label the preceding line with label("label text")
+    tv <- 3.45; label("log V")
+    ## the label("Label name") works with all models
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v  ~ 0.1
+    add.sd <- 0.7
+  })
+  model({
+    ka <- exp(tka + eta.ka)
+    cl <- exp(tcl + eta.cl)
+    v <- exp(tv + eta.v)
+    linCmt() ~ add(add.sd)
+  })
+}
+
+nlmixr(one.cmt)
+```
+
+We'll see this one-compartment model again later on, but for the moment, let's concentrate on the syntax.
+
+Model parameter names can be specified using almost any name that R will accept. Variable names are case-sensitive, and a number specific of model parameter names (like `CL` and `V` for an IV bolus one-compartment model) can be used to define solved systems (we'll discuss this in detail in a bit).
+
+Comments (using `#`, or more explicitly defined using the `label` function) on these population and residual parameters are captured as parameter labels. These are used for populating parameter table output by `nlmixr2` and by the graphical user interface package `shinyMixR`.
+
+Multivariate normal individual deviations from typical population values of parameters (analogous to "ETA" parameters in NONMEM) are estimated, along with the variance-covariance matrix of these deviations (the "OMEGA" matrix). These inter-individual random-effects parameters take initial estimates and in `nlmixr2` are specified using the tilde (`˜`). In R statistical parlance, the tilde is used to represent "modeled by" and was chosen to distinguish these estimates from the population and residual error parameters.
+
+An example specifying the initial estimate of variability in absorption rate constant (`ka`) as having a variance of 0.6 is:
+
+```
+eta.ka ~ 0.6
+```
+
+The addition operator `+` may be used to specify the variance/covariance matrix of jointly-distributed random effects, with the right-hand side of the expression specifying the initial estimates as a lower triangular matrix. An example for `CL` and `V` might look like:
+
+```
+eta.cl + eta.v ~ c(0.1,
+                   0.005, 0.1)
+```
+
+This sets initial estimates for the variability of `CL` and `V` of 0.1, with a covariance of 0.005. Note that only the parameters that are assumed to be correlated need to have covariances specified in this manner.
+
+### The `model` block
+
+The model block specifies the model itself. Models are defined in terms of the parameters defined in the `ini` block and covariates of interest from the data. Individual model parameters are defined before the model itself is specified. For example, to define individual clearance in terms of the typical value in the population and an individual random-effect estimate, you could use:
+
+```
+cl = exp(tcl + eta.cl)
+```
+
+This assumes that the initial estimate of CL (`tcl`) has been specified on the logarithmic scale, and that the parameter has a log-normal distribution in the population. 
+
+As in the case of the `ini` block, `=` and `<-` operators are equivalent.
+
+For optimal compatibility between estimation methods, it is recommended to express parameters on the logarithmic scale (`exp(LOGTVPAR + IIV + LOGCOV*PAREFF`), where `LOGTVPAR` is the log-transformed typical population value of the parameter, `IIV` represents the interindividual variability, `LOGCOV` represents a log-transformed covariate variable, and `PAREFF` represents the estimated covariate effect). 
+
+The order of these parameters does not matter and is analogous to "mu-referencing" in NONMEM. (Note that because interoccasional variability is not yet supported, mu-referencing applies on an individual level.) For the SAEM algorithm, the traditional parameterization of the form `PAR = TVPAR * exp(IIV)` is not allowed, and `PAR = exp(LOGTVPAR + IIV)` should be used instead. In general, numerical stability is better with mu-referencing for all fitting algorithms, and we recommend it be used wherever possible.
+
+After defining the individual model parameters, the model can be defined directly using equations or by using `rxode2` code. The `rxode2` method of specifying the equations is based on the Leibnitz form of writing differential equations, using "d/dt" notation. Defining a set of ODEs for a "depot" compartment and its interaction with the "central" compartment in which observations are made, a concentration (`cp`) in terms of these state values could be calculated using:
+
+```
+d/dt(depot)   = -ka*depot
+d/dt(central) =  ka*depot - cl/v*central
+
+cp = central/v
+```
+
+Initial conditions for states (i.e. compartments) can be defined by defining `state(0)`:
+
+```
+depot(0) = 0
+```
+
+The order of appearance in the model code defines the compartment number to be used in `nlmixr2`'s `evid` variable (although the name of the compartment may also be used). In this case, the `depot` compartment would be 1 and the `central` compartment would be 2. 
+
+The tilde (`~`) is used to define residual error terms in the `model` block. Residual error models may be defined using either `add(parameter)` for additive error, `prop(parameter)` for proportional error, or `add(parameter1) + prop(parameter2)` for combined additive and proportional errors. The unexplained variability parameters are estimated as a standard deviation (SD) for additive errors and as a fractional coefficient of variation for proportional errors.
+
+In the above example, we specify additive error on concentration as:
+
+```
+cp ~ add(add.err)
+```
+
+
+
+
+## Other model types
+
+`rxode2` supports a range of model types. So far, we've just looked at ODE systems.
+
+### "Prediction-only" models
+
+"Prediction-only" models are analogous to \$PRED models in NONMEM, which some readers may be familiar with. Here's a very simple example - a one-compartment model with bolus dosing.
+
+```{r pred1}
+
+mod <- rxode2({
+    ipre <- 10 * exp(-ke * t);
+})
+
+```
+
+Solving prediction-only models is done just the same way as for ODE systems, but is faster.
+
+```{r pred2}
+
+et   <- et(seq(0, 24, length.out=50))
+cmt1 <- rxSolve(mod, et, params = c(ke=0.5))
+cmt1
+
+```
+
+```{r pred3}
+
+library(ggplot2)
+library(patchwork)
+ggplot(cmt1, aes(time, ipre)) +
+  geom_line(col="red") +
+  theme_light()
+
+```
+
+### Solved systems
+
+As well as using ODEs to define models, shortcuts for solved systems in the cases of one-compartment, two-compartment, and three-compartment linear PK model variants with bolus or infusion administration, possibly combined with a preceding absorption compartment, are available. Estimation is typically faster when solved systems are used. When a solved system is specified, `nlmixr2` deduces the type of compartmental model based on the parameter names defined in the `ini` block. To collapse an entire system of ODEs describing a one-compartment model and an additive residual error model to a single, simple statement, one could write the following:
+
+```
+linCmt() ~ add(add.err)
+```
+
+In this example, concentration is calculated automatically as the amount of drug in the central compartment divided by the central volume. 
+
+`rxode2` has a library of models which have been pre-solved, and thus do not need to be defined in terms of ODEs. These can be used by including `linCmt()` function in model code, along with a set of model parameters that fits the model you wish to use. For example:
+
+| *Model*                             | *Parameters*                              | *Microconstants*                              | *Hybrid constants*                      |
+|------------------|------------------|------------------|------------------|
+| One-compartment, bolus or IV dose   | `cl`, `v`                                 | `v`, `ke`                                     | `v`, `alpha`                            |
+| One-compartment, oral dose          | `cl`, `v`, `ka`                           | `v`, `ke`, `ka`                               | `v`, `alpha`, `ka`                      |
+| Two-compartment, bolus or IV dose   | `cl`, `v1`, `v2`, `q`                     | `v1`, `k12`, `k21`, `ke`                      | `v`, `alpha`, `beta`, `aob`             |
+| Two-compartment, oral dose          | `cl`, `v1`, `v2`, `q`, `ka`               | `v1`, `k12`, `k21`, `ke`, `ka`                | `v`, `alpha`, `beta`, `aob`, `ka`       |
+| Three-compartment, bolus or IV dose | `cl`, `vc`, `vp`, `vp2`, `q1`, `q2`       | `v1`, `k12`, `k21`, `k13`, `k31`,`ke`         | `a`, `alpha`, `b`, `beta`, `c`, `gamma` |
+| Three-compartment, oral dose        | `cl`, `vc`, `vp`, `vp2`, `q1`, `q2`, `ka` | `a`, `alpha`, `b`, `beta`, `c`, `gamma`, `ka` |                                         |
+
+Most parameters can be specified in a number of ways. For example, central volume in a one-compartment model can be called `v`, `v1` or `vc`, and will be understood as the same parameter by `linCmt()`. Here's a very simple example...
+
+```{r solved}
+
+mod_solved <- rxode2({
+    ke <- 0.5
+    V <- 1
+    ipre <- linCmt();
+})
+
+mod_solved
+
+
+```
+
+We can treat this the same way as an ODE model:
+
+```{r solved2}
+
+et  <- et(amt=10, time=0, cmt=depot) %>%
+    et(seq(0, 24, length.out=50))
+cmt_solved <- rxSolve(mod_solved, et, params=c(ke=0.5))
+cmt_solved
+
+```
+
+### Combining ODEs and solved systems
+
+Solved systems and ODEs can be combined. Let's look at our two-compartment indirect-effect model again.
+
+```{r, warning=FALSE,message=FALSE}
+
+## Set up parameters and initial conditions
+
+theta <- c(KA   = 0.294, 
+           CL   = 18.6, 
+           V2   = 40.2, 
+           Q    = 10.5,  
+           V3   = 297,
+           Kin  = 1, 
+           Kout = 1, 
+           EC50 = 200)
+
+inits <- c(eff = 1);
+
+## Set up dosing event information
+
+ev <- eventTable(amount.units='mg', time.units='hours') %>%
+    add.dosing(dose=10000, nbr.doses=10, dosing.interval=12, dosing.to=1) %>%
+    add.dosing(dose=20000, nbr.doses=5, start.time=120,dosing.interval=24, dosing.to=1) %>%
+    add.sampling(0:240);
+
+## Set up a mixed solved/ODE system
+
+mod2 <- rxode2({
+  ## the order of variables do not matter
+  ## the type of compartmental model is determined by the parameters specified
+  
+    C2        = linCmt(KA, CL, V2, Q, V3);  # you don't need to provide the parameters, but you can if you want to
+    eff(0)    = 1  ## The initial amount in the effect compartment is 1
+    d/dt(eff) =  Kin - Kout*(1 - C2/(EC50 + C2))*eff;
+})
+
+```
+
+```{r}
+
+mod2
+
+```
+
+Concentration output from the 2-compartment model is assigned to the `C2` variable and is subsequently used in the indirect response model.
+
+Ntoe that when mixing solved systems and ODEs, the solved system's "compartment" is always the last one. This is because the solved system technically isn't a compartment as such. Adding the dosing compartment to the end will not interfere with the actual ODE to be solved.
+
+In this example, therefore, the effect compartment is compartment #1 while the PK dosing compartment for the depot is compartment #2.
+
+Let's solve the system and see what it looks like.
+
+```{r}
+
+x <- mod2 %>%  solve(theta, ev)
+print(x)
+
+```
+
+```{r}
+
+p1 <- ggplot(x, aes(time, C2)) + 
+  geom_line(col="red") +
+  theme_light() +
+  labs(title="Concentration")
+
+p2 <- ggplot(x, aes(time, eff)) +   
+  geom_line(col="red") +
+  theme_light()+
+  labs(title="Effect")
+
+p1 + p2 + plot_layout(nrow=2)
+
+```
+
+
+
+
+
+## Preparing a model for use
+
+If not already defined in the `ini` block, parameters can be specified via the `params` argument in the `solve()` method to differentiate them from dynamic state variables.
+
+```
+m1 <- rxode2(model = ode, modName = "m1")
+
+# model parameters -- a named vector is required
+theta <- c(KA   = 0.29, 
+           CL   = 18.6, 
+           V2   = 40.2, 
+           Q    = 10.5, 
+           V3   = 297, 
+           Kin  = 1, 
+           Kout = 1, 
+           EC50 = 200)
+
+# state variables and their amounts at time 0 (the use of names is
+# encouraged, but not required)
+inits <- c(depot=0, centr=0, peri=0, eff=1)
+
+# qd1 is an eventTable specification with a set of dosing and sampling
+# records (code not shown here)
+
+rxSolve(m1, params = theta, events = qd1, inits = inits)
+```
+
+The values of these variables at pre-specified time points are saved during model fitting/integration and returned as part of the fitted values (see the function `et()`, to define a set of time points when to capture the values of these variables) and returned as part of the modeling output.
+
+
+
+

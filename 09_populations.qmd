@@ -1,0 +1,419 @@
+# Simulating populations
+
+## Between-subject variability
+
+Simulating single profiles is fun and all, and can be very helpful in explaining what the model is doing, but for this kind of thing to be really useful, we need to be able simulate populations of individuals, not just single patients. 
+
+Let's revisit our two-compartment indirect response model:
+
+```{r}
+library(rxode2)
+library(patchwork)
+
+set.seed(740727)
+rxSetSeed(740727)
+
+mod <- function() {
+  ini({
+    KA   <- 0.294
+    TCl  <- 18.6
+    eta.Cl ~ 0.4^2  # between-subject variability; variance is 0.16
+    V2   <- 40.2
+    Q    <- 10.5
+    V3   <- 297
+    Kin  <- 1
+    Kout <- 1
+    EC50 <- 200
+  })
+  model({
+    C2 <- centr/V2
+    C3 <- peri/V3
+    CL <-  TCl*exp(eta.Cl)  ## coded as a variable in the model
+    d/dt(depot) <- -KA*depot
+    d/dt(centr) <- KA*depot - CL*C2 - Q*C2 + Q*C3
+    d/dt(peri)  <-                    Q*C2 - Q*C3
+    d/dt(eff)   <- Kin - Kout*(1-C2/(EC50+C2))*eff
+    eff(0) <- 1
+  })
+}
+```
+
+You'll notice we've added something new: between-subject variability, `eta.Cl`, to which we have assigned a value of 0.16 (a variance, corresponding to a standard deviation of 0.4). Notice also our convention of using the tilde (`~`) to indicate that this is a random variable. We define it in the `ìni` block and use it in the `mod` block - here, it provides for a log-normal distribution of clearance values. "Eta" is a commonly-used term for between-subject variability in pharmacometrics, and is derived from this original expression, which you might remember from @sec-nlme. Here we're using CL rather than V.
+
+$$
+CL_i = CL \cdot \text{exp}(\eta_{CL,i})\\
+\eta_{CL,i} \sim N(0, \omega_{CL})
+$$
+So here, variability around CL ($\eta_{CL}$) is normally distributed with a mean of 0 and a variance of 0.16 (corresponding to an $\omega_{CL}$ value of 0.4). CL itself will be log-normally distributed. 
+
+The next step is to create the dosing regimen, which every simulated subject will share:
+
+```{r}
+ev <- et(amountUnits="mg", timeUnits="hours") %>%
+  et(amt=10000, cmt="centr")
+```
+
+We can add sampling times as well (although `rxode2` will fill these in for you if you don't do this now).
+
+```{r}
+ev <- ev %>% et(0,48, length.out=100)
+```
+
+Notice as well that `et` takes similar arguments to `seq` when adding sampling times. As you'll remember from @sec-events, many methods for adding sampling times and events are available in case we want to set up something complex. Now that we have a dosing and sampling scheme set up, we can simulate from the model. Here we create 100 subjects using the `nSub` argument.
+
+```{r}
+sim  <- rxSolve(mod, ev, nSub=100)
+```
+To look at the results quickly, you can use the built-in `plot` routine. This will create a `ggplot2` object that you can modify as you wish using standard `ggplot2` syntax.  The extra parameter we've supplied to `plot` clarifies the piece of information we are
+interested in plotting. In this case, it's the the derived parameter `C2`, concentration.
+
+```{r}
+library(ggplot2)
+
+plot(sim, C2, ylab="Concentration", log="y")
+```
+
+Once we have results we like, we can get a bit more creative with `ggplot2` and `patchwork`, which lets us arrange plots the way we want them.
+
+```{r}
+p1 <- ggplot(sim, aes(time, C2, group=sim.id)) + 
+  geom_line(col="red") +
+  scale_y_log10("Concentration") +
+  scale_x_continuous("Time") +
+  theme_light() +
+  labs(title="Concentration")
+
+p2 <- ggplot(sim, aes(time, eff, group=sim.id)) + 
+  geom_line(col="red") +
+  scale_y_log10("Effect") +
+  scale_x_continuous("Time") +
+  theme_light() +
+  labs(title="Effect")
+
+p1 + p2
+
+```
+
+Usually, simply simulating the system isn't enough. There's too much information, and it can be difficult to see trends easily. We need to summarize it.
+
+The `rxode2` object is a type of data frame, which means we can get at the simulated data quite easily.
+
+```{r}
+class(sim)
+head(sim)
+
+```
+`rxode2` includes some helpful shortcuts for summarizing the data. For example, we can extract the  5th, 50th, and 95th percentiles of the simulated data for each time point and plot them quite easily.
+
+```{r}
+confint(sim, "C2", level=0.95) %>%
+    plot(ylab="Central Concentration", log="y")
+```
+
+```{r}
+confint(sim, "eff", level=0.95) %>%
+    plot(ylab="Effect")
+```
+This is a shortcut for this slightly longer code:
+
+```{r}
+
+library(dplyr)
+
+summary <- sim %>%
+  group_by(time) %>%
+  summarize(C2.5=quantile(C2, 0.05),
+            C2.50=quantile(C2, 0.50),
+            C2.95=quantile(C2, 0.95),
+            eff.5=quantile(eff, 0.05),
+            eff.50=quantile(eff, 0.50),
+            eff.95=quantile(eff, 0.95))
+
+p1 <- ggplot(summary, aes(time, C2.50)) + 
+  geom_line(col="red") +
+  geom_ribbon(aes(ymin=C2.5, ymax=C2.95), alpha=0.2) +
+  scale_y_log10("Concentration") +
+  scale_x_continuous("Time") +
+  annotation_logticks(sides="l")+ 
+  theme_light() +
+  labs(title="Concentration")
+
+p2 <- ggplot(summary, aes(time, eff.50)) + 
+  geom_line(col="red") +
+  geom_ribbon(aes(ymin=eff.5, ymax=eff.95), alpha=0.2) +
+  scale_y_continuous("Effect") +
+  scale_x_continuous("Time") +
+  annotation_logticks(sides="l")+ 
+  theme_light() +
+  labs(title="Effect")
+
+p1 + p2
+
+```
+
+The parameters that were simulated for this example can also be extracted relatively easily.
+
+
+```{r}
+head(sim$param)
+```
+
+## Random unexplained variability 
+
+In addition to simulating between-subject variability, it's often important to simulate unexplained variability. This is variability that is not explained by differences between subjects, such as laboratory assay error, for example.
+
+Recall that random unexplained variability can be defined in a number of ways. The first, in which an additive relationship is assumed, is defined as:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} + \sigma_{add,i,j}\\
+\sigma_{add} \sim N(0, \epsilon_{add})
+$$
+Residual error can also be modelled to be proportional:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j})\\
+\sigma_{prop} \sim N(0, \epsilon_{prop})
+$$
+Or both:
+
+$$
+DV_{obs,i,j} = DV_{pred,i,j} \cdot (1+ \sigma_{prop,i,j}) + \sigma_{add,i,j}
+$$
+
+Without rewriting our model from scratch, we can simply add residual error to our concentration and effect compartments using model piping, as follows.
+
+```{r}
+mod2 <- mod %>%
+  model(eff ~ add(eff.sd), append=TRUE) %>%    # add additive residual error to effect 
+  model(C2 ~ prop(prop.sd), append=TRUE) %>%   # add proportional residual error to concentration
+  ini(eff.sd=sqrt(0.1), prop.sd=sqrt(0.1))
+```
+
+You can see how the dataset should be defined with
+`$multipleEndpoint`:
+
+```{r}
+mod2$multipleEndpoint
+```
+
+We can set up an event table like this...
+
+```{r}
+ev <- et(amountUnits="mg", timeUnits="hours") %>%
+  et(amt=10000, cmt="centr") %>%
+  et(seq(0,48, length.out=100), cmt="eff") %>%
+  et(seq(0,48, length.out=100), cmt="C2")
+```
+
+And now we can solve the system.
+
+```{r}
+sim  <- rxSolve(mod2, ev, nSub=100)
+```
+The results here are presented by compartment number, so we'll need to do a bit of filtering to generate our summary plots with residual error. The values of `C2` and `eff` with residual error are found in `sim`.
+
+```{r}
+sim
+```
+
+
+```{r}
+summary <- sim %>%
+  group_by(time,CMT) %>%
+  summarize(C2.5=quantile(sim, 0.05),
+            C2.50=quantile(sim, 0.50),
+            C2.95=quantile(sim, 0.95),
+            eff.5=quantile(sim, 0.05),
+            eff.50=quantile(sim, 0.50),
+            eff.95=quantile(sim, 0.95))
+
+p1 <- ggplot(subset(summary, CMT==5), aes(time, C2.50)) + 
+  geom_line(col="red") +
+  geom_ribbon(aes(ymin=C2.5, ymax=C2.95), alpha=0.2) +
+  scale_y_log10("Concentration") +
+  scale_x_continuous("Time") +
+  annotation_logticks(sides="l")+ 
+  theme_light() +
+  labs(title="Concentration")
+
+p2 <- ggplot(subset(summary, CMT==4), aes(time, eff.50)) + 
+  geom_line(col="red") +
+  geom_ribbon(aes(ymin=eff.5, ymax=eff.95), alpha=0.2) +
+  scale_y_continuous("Effect") +
+  scale_x_continuous("Time") +
+  annotation_logticks(sides="l")+ 
+  theme_light() +
+  labs(title="Effect")
+
+p1 + p2
+```
+
+## Simulating a population of individuals with different dosing regimens
+
+It's always nice to have a fixed dosing schedule in which everyone gets the right dose at precisely the right time, but in clinical practice this is something that doesn't often happen. Sometimes, therefore, you might want to set up the dosing and observations in your simulations to match those of particular individuals in a clinical trial.  To do this, you'll have to create a data frame using the `rxode2` event specification, as well as an `ID` column to indicate which individual the doses and events refer to.
+
+```{r}
+library(dplyr)
+ev1 <- et(amountUnits="mg", timeUnits="hours") %>%
+    et(amt=10000, cmt=2) %>%
+    et(0,48,length.out=10)
+
+ev2 <- et(amountUnits="mg", timeUnits="hours") %>%
+    et(amt=5000, cmt=2) %>%
+    et(0,48,length.out=8)
+
+dat <- rbind(data.frame(ID=1, ev1$get.EventTable()),
+             data.frame(ID=2, ev2$get.EventTable()))
+
+
+## Note the number of subject is not needed since it is determined by the data
+sim  <- rxSolve(mod, dat)
+
+#sim %>% select(id, time, eff, C2)
+
+p1 <- ggplot(sim, aes(time, C2)) + 
+  geom_line(col="red") +
+  scale_y_log10("Concentration") +
+  scale_x_continuous("Time") +
+  facet_grid(~id) +
+  annotation_logticks(sides="l")+ 
+  theme_light() +
+  labs(title="Concentration")
+
+p2 <- ggplot(sim, aes(time, eff)) + 
+  geom_line(col="red") +
+  scale_y_continuous("Effect") +
+  scale_x_continuous("Time") +
+  facet_grid(~id) +
+  theme_light() +
+  labs(title="Effect")
+
+p1 / p2
+
+```
+This can, however, start getting a bit slow and unwieldy if you have a lot of patients. In this situation, a split-apply-combine strategy is often more efficient.  We could split the data frame by `ID`, generate an event table for and apply the `rxSolve` function to each patient, and then recombine the results into a single data frame at the end.
+
+## Simulating clinical trials
+
+Simulating clinical trials is a gigantic topic and has had entire books written about it - see the excellent one edited by Peck and Kimko for a particularly useful example [@PeckCarlC2011CTS]. A complete clinical trial simulation can be performed in `rxode2`  either by using a simple single event table, or data from a clinical
+trial as described above.
+
+### Parameter uncertainty
+
+In simulations of clinical trials, one should typically consider not only variability between subjects and unexplained residual variability, but also the uncertainty of the parameter estimates in the model to be used. Parameter uncertainty can be accounted for by simulating multiple virtual "studies," specified in `rxode2` by the parameter `nStud`.  The best way to do this is to sample the fixed effect parameters and
+covariance matrices for the between subject variability (`omega`) and
+unexplained variabilities (`sigma`) from the multivariate normal distribution defined by the model's variance-covariance matrix. Depending on the information you
+have from the models, there are some alternative ways to do this as well, but it's beyond the scope of this book to go into them in detail - the interested reader is referred to the `rxode2` documentation (particularly relating to `cvPost()`) for more information. 
+
+Lets assume we'd like to simulate from a simple one-compartment model with oral absorption and a lag time as well as first-order elimination, with an effect of creatinine clearance (CrCL) on CL and weight on V, and combined additive and proportional residual error. The model is as follows:
+
+```{r}
+rx1 <- rxode2({
+  cl    <- tcl*(1+crcl.cl*(CLCR-65)) * exp(eta.cl)
+  v     <- tv * WT * exp(eta.v)
+  ka    <- tka * exp(eta.ka)
+  ipred <- linCmt()
+  obs   <- ipred * (1 + prop.sd) + add.sd 
+})
+```
+
+Next we need to provide the model parameters:
+
+```{r}
+theta <- c(tcl     = 26.3, 
+           tv      = 1.35, 
+           tka     = 4.20, 
+           tlag    = 0.208,
+           prop.sd = 0.205, 
+           add.sd  = 0.0106, 
+           crcl.cl = 0.00717,
+           eta.cl  = 0.0730,  
+           eta.v   = 0.0380, 
+           eta.ka  = 1.91)
+```
+
+And the covariances - the easiest way to create a named covariance matrix is to use `lotri()`. The numbers themselves can be obtained from a covariance matrix from a previous model fit, or from a prior distribution. Here we'll use the values from a previous fit.
+
+```{r}
+vcovMat <- lotri(
+    tcl + tv + tka + tlag + prop.sd + add.sd + crcl.cl + eta.cl + eta.v + eta.ka ~
+        c(7.95E-01,
+          2.05E-02, 1.92E-03,
+          7.22E-02, -8.30E-03, 6.55E-01,
+          -3.45E-03, -6.42E-05, 3.22E-03, 2.47E-04,
+          8.71E-04, 2.53E-04, -4.71E-03, -5.79E-05, 5.04E-04,
+          6.30E-04, -3.17E-06, -6.52E-04, -1.53E-05, -3.14E-05, 1.34E-05,
+          -3.30E-04, 5.46E-06, -3.15E-04, 2.46E-06, 3.15E-06, -1.58E-06, 2.88E-06,
+          -1.29E-03, -7.97E-05, 1.68E-03, -2.75E-05, -8.26E-05, 1.13E-05, -1.66E-06, 1.58E-04,
+          -1.23E-03, -1.27E-05, -1.33E-03, -1.47E-05, -1.03E-04, 1.02E-05, 1.67E-06, 6.68E-05, 1.56E-04,
+          7.69E-02, -7.23E-03, 3.74E-01, 1.79E-03, -2.85E-03, 1.18E-05, -2.54E-04, 1.61E-03, -9.03E-04, 3.12E-01))
+
+```   
+
+An event table, as always, is needed:
+
+```{r}
+evw <- et(amount.units="mg", time.units="hours") %>%
+    et(amt=100) %>%
+    ## For this problem we will simulate with sampling windows
+    et(list(c(0, 0.5),
+            c(0.5, 1),
+            c(1, 3),
+            c(3, 6),
+            c(6, 12))) %>%
+    et(id=1:1000)
+
+evw
+```
+
+Now we can simulate some data. There are some technical parameters that need to be set - `sigmaXform`, `omegaXform`, `dfSub` and `dfObs`, as well as the distributions of covariates to use (weight will have a mean of 70 and a standard deviation of 15, while CrCL will have a mean of 100 and a standard deviation of 65). One could also provide a set of 1000 values for both of these covariates by sampling from previously-observed data.
+
+```{r}
+## Total number of observations is: 476
+## Total number of individuals:     74
+sim  <- rxSolve(rx1, params = theta, events = evw, 
+                nSub = 100, nStud = 10,  # 100 subjects, 10 trials
+                thetaMat = vcovMat,      # covariance matrix
+                thetaLower = 0,          # lower bound for structural parameters 
+                sigma = c("prop.sd", "add.sd"), 
+                sigmaXform = "identity", # directly model the sigmas
+                omega = c("eta.cl", "eta.v", "eta.ka"), # etas are variances
+                omegaXform = "variance", # etas are variances
+                iCov = data.frame(WT=rnorm(1000, 70, 15),     # normally-distributed weight
+                                  CLCR=rnorm(1000, 65, 25)),  # normally-distributed CrCL
+                dfSub = 74,     # degrees of freedom for sampling subjects (n)
+                dfObs = 476)    # degrees of freedom for sampling observations (n obs)
+
+print(sim)
+
+s <- sim %>% confint(c("ipred"))
+
+ggplot(s[s$p1==0.5,], aes(time, p50)) +
+  geom_ribbon(aes(ymin=p2.5, ymax=p97.5), alpha=0.2) +
+  geom_line()
+
+```
+
+## Simulate without uncertainty in `omega` or `sigma` parameters
+
+If you do not wish to sample from the prior distributions of either
+the `omega` or `sigma` matrices, you can turn off this feature by
+specifying the `simVariability = FALSE` option when solving:
+
+```{r}
+
+sim  <- rxSolve(rx1, evw, nSub=1000, thetaMat=vcovMat, nStud=10, params=theta,
+                iCov = data.frame(WT=rnorm(1000, 70, 15),     # normally-distributed weight
+                                  CLCR=rnorm(1000, 65, 25)),  # normally-distributed CrCL
+                simVariability=FALSE)
+
+s <-sim %>% confint(c("ipred"))
+
+ggplot(s[s$p1==0.5,], aes(time, p50)) +
+  geom_ribbon(aes(ymin=p2.5, ymax=p97.5), alpha=0.2) +
+  geom_line()
+
+```
+
+Note since realizations of `omega` and `sigma` were not simulated,
+`$omegaList` and `$sigmaList` both return `NULL`.

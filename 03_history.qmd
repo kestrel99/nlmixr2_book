@@ -4,7 +4,7 @@ This book has been a long time in coming.
 
 ## In the beginning, there was `RxODE`
 
-Our story begins with `RxODE`. `RxODE` was developed by Melissa Hallow and Wenping Wang as an R package for facilitating quick and efficient simulations of ODE models [@Wang2016], and when it was presented by Melissa Hallow at the PAGE meeting in Crete in 2015 [@Hallow2015], the idea was floated to use its machinery for parameter estimation using `nlme`, the R implementation of nonlinear mixed-effects models by Pinheiro and Bates [@Pinheiro2000]. As it turned out, work on developing this concept was already pretty advanced by that time, and parameter estimation with both `nlme` and stochastic annealing expectation maximization (SAEM) [@Delyon1999] was implemented by Wenping by the end of that year.
+Our story begins with `RxODE`. `RxODE` was developed by Melissa Hallow and Wenping Wang as an R package for facilitating quick and efficient simulations of ODE models [@Wang2016]. Work first began in the equivalent of WEenping's garage in 2005, and when it was finally presented by Melissa Hallow at the PAGE meeting in Crete in 2015 [@Hallow2015], the idea was floated to use its machinery for parameter estimation using `nlme`, the R implementation of nonlinear mixed-effects models by Pinheiro and Bates [@Pinheiro2000]. As it turned out, work on developing this concept was already pretty advanced by that time, and parameter estimation with both `nlme` and stochastic annealing expectation maximization (SAEM) [@Delyon1999] was implemented by Wenping by the end of that year.
 
 ## Stan
 
@@ -26,17 +26,23 @@ Although `nlmixr` had been a regular fixture at PAGE and ACoP in the intervening
 
 ## Streamlining and modularization
 
-Installing `nlmixr` was, at this time, a complicated and daunting undertaking, and although many in the pharmacometrics community had taken to `nlmixr` with enthusiasm, this was a large disadvantage that, to be frank, was turning people off. It had long been necessary to use Python for handling some aspects of FOCEI fitting, and getting it to work properly together with R was *hard*. This was further complicated by CRAN's effective but very rigid package review and approval system, which was leading to endless problems with keeping the various dependencies `nlmixr` had in sync with one another. In April 2021, `nlmixr` 2.0 was unleashed upon the world, and Python was left behind forever. To say this was a relief to the development team was to understate the emotional catharsis that took place.
+Installing `nlmixr` was, at this time, a complicated and daunting business, and although many in the pharmacometrics community had taken to `nlmixr` with enthusiasm, this was a large disadvantage that, to be frank, was turning people off. It had long been necessary to use Python for handling some aspects of FOCEI fitting, and getting it to work properly together with R was *hard*. This was further complicated by CRAN's very effective but very rigid package review and approval system, which was leading to endless problems with keeping the various dependencies `nlmixr` had in sync with one another. In April 2021, `nlmixr` 2.0 was unleashed upon the world, and Python was left behind forever. To say this was a relief to the development team was to understate the emotional catharsis that took place.
 
 Although this solved one problem, another had been brewing. `nlmixr` had become a large package by R standards, and compile times at CRAN had begun to irk its administrators, leading to significant delays in approval. This eventually led to the decision to reimplement `nlmixr` as a series of closely linked, modular packages as opposed to a single monolithic unit. Rather than reverse-engineer the original `nlmixr`, the decision was taken to fork the project, and `nlmixr2` was born in February 2022. `nlmixr` would remain on GitHub, but would no longer be developed actively, while new features and ongoing improvements would be applied to `nlmixr2`. The first CRAN release of `nlmixr2` took place in June 2022.
 
 Up to 26 March 2022, the date on which the last commit was made to the original version of `nlmixr`, there were 2,403 commits to the nlmixr repository and 17 more CRAN releases. `RxODE` had 4,860 commits and 33 CRAN releases (some before `nlmixr`'s time, but we're just going to go ahead and count them anyway).
+
+Since then, we've seen encouraging interest and explosive growth. The development team has undergone seismic chnages - Wenping and Teun have moved on, while Matt has taken on the role of lead developer, supported (at the time of writing) by Bill Denney, John Harrold, Richard Hooijmaaijers, Anne Keunecke, Theo Papathanasiou, Rik Schoemaker, Max Taubert, Mirjam Trame, and Justin Wilkins. `nlmixr2` version 3.0 was released in late 2024, and a flurry of add-on packages, including [`babelmixr2`](https://nlmixr2.github.io/babelmixr2/), [`nonmem2rx`](https://nlmixr2.github.io/nonmem2rx/), [`monolix2rx`](https://nlmixr2.github.io/monolix2rx/), [`nlmixr2extra`](https://nlmixr2.github.io/nlmixr2extra/), [`nlmixr2rpt`](https://nlmixr2.github.io/nlmixr2rpt/) and [`nlmixr2lib`](https://nlmixr2.github.io/nlmixr2lib/) have been released.  
 
 ## Community enthusiasm
 
 Over the years, we've hosted numerous tutorials at the major pharmacometrics meetings (PAGE, ACoP, PAGANZ and WCoP), and used `nlmixr` as the centrepoint for a series of well-received pharmacometrics courses in Cuba and elsewhere. We've also managed to publish a bit [@Fidler2021], as have others (we'll get into this later on).
 
 Our tutorial in *Clinical Pharmacology & Therapeutics: Pharmacometrics & Systems Pharmacology* [@Fidler2019] was one of that journal's top ten most-read articles in 2021, with over 4,000 downloads. Our article had been one of the top 10% most-downloaded papers in 2018-2019, and having such interest for the second time in a row is tremendously encouraging for all of us! We hope it's a reflection of the enthusiasm the community is building for our tool, and hope that it will continue.
+
+Academic groups have been using our tools with some success - University College London published recently on models for SARS-CoV-2 [@agyeman_comparative_2022] and metformin [@mak_assessment_2023], for example. 
+
+Finally, several more R packages using nlmixr2 have been released, including [`posologyr`](https://levenc.github.io/posologyr/) and [`nlmixr2auto`](https://github.com/ucl-pharmacometrics/nlmixr2auto).  
 
 ## But why?
 
@@ -56,4 +62,4 @@ Creativity and collaboration! Whereas open science - of which we are massive fan
 
 Finally: Concern! What will happen to NONMEM when its sole lead developer retires? Having a backup solution is very reassuring.
 
-This book is the next step in our journey; we hope you'll take it with us.
+This book is the next step in our journey; thanks for taking it with us.
